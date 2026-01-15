@@ -181,15 +181,15 @@ $page_title = 'Bank Payment Methods';
                         <div class="flex items-center space-x-6">
                             <div>
                                 <span class="text-gray-600">Total Methods:</span>
-                                <span class="font-bold text-gray-800 ml-2"><? = count($bank_methods) ?></span>
+                                <span class="font-bold text-gray-800 ml-2"><? //= count($bank_methods) ?></span>
                             </div>
                             <div>
                                 <span class="text-gray-600">Active:</span>
-                                <span class="font-bold text-green-600 ml-2"><? = $active_count ?></span>
+                                <span class="font-bold text-green-600 ml-2"><? //= $active_count ?></span>
                             </div>
                             <div>
                                 <span class="text-gray-600">Inactive:</span>
-                                <span class="font-bold text-gray-500 ml-2"><? = $inactive_count ?></span>
+                                <span class="font-bold text-gray-500 ml-2"><? //= $inactive_count ?></span>
                             </div>
                         </div>
                     </div>
