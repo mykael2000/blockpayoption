@@ -1,0 +1,21 @@
+# Uploaded files (except .gitkeep)
+uploads/*
+!uploads/.gitkeep
+
+# Configuration file with sensitive data
+includes/config.php
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
