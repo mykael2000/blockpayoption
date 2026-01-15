@@ -50,6 +50,10 @@
     background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
 }
 
+.gradient-emerald-green {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
 /* Animations */
 @keyframes float {
     0%, 100% {
