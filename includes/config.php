@@ -49,10 +49,10 @@ define('SESSION_LIFETIME', 3600); // 1 hour in seconds
 // Database Configuration
 // WARNING: In production, consider using environment variables or a separate
 // configuration file (not in version control) for database credentials.
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'blockpayoption');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_HOST', 'server261.web-hosting.com');
+define('DB_NAME', 'blocxgpd_block');
+define('DB_USER', 'blocxgpd_block');
+define('DB_PASS', 'C8sYoXsvGLyf');
 define('DB_CHARSET', 'utf8mb4');
 
 // File Upload Configuration
