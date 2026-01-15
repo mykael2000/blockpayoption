@@ -15,9 +15,28 @@ if (empty($unique_id)) {
 } else {
     try {
         $stmt = $pdo->prepare("
-            SELECT pl.*, pm.name as method_name, pm.symbol, pm.wallet_address, pm.logo_path, pm.networks
+            SELECT 
+                pl.*,
+                pm.name as method_name, 
+                pm.symbol, 
+                pm.wallet_address, 
+                pm.logo_path as crypto_logo, 
+                pm.networks,
+                bpm.id as bank_id,
+                bpm.bank_name,
+                bpm.account_holder_name,
+                bpm.account_number,
+                bpm.routing_number,
+                bpm.swift_bic_code,
+                bpm.bank_address,
+                bpm.account_type,
+                bpm.currency as bank_currency,
+                bpm.country,
+                bpm.instructions as bank_instructions,
+                bpm.logo_path as bank_logo
             FROM payment_links pl
-            JOIN payment_methods pm ON pl.payment_method_id = pm.id
+            LEFT JOIN payment_methods pm ON pl.payment_method_id = pm.id
+            LEFT JOIN bank_payment_methods bpm ON pl.bank_payment_method_id = bpm.id
             WHERE pl.unique_id = ?
         ");
         $stmt->execute([$unique_id]);
@@ -117,7 +136,13 @@ function getStatusIcon($status) {
                     <div class="grid md:grid-cols-2 gap-4 text-left">
                         <div>
                             <p class="text-sm text-gray-500 mb-1">Payment Method</p>
-                            <p class="font-semibold text-gray-900"><?php echo e($payment_link['method_name']); ?> (<?php echo e($payment_link['symbol']); ?>)</p>
+                            <p class="font-semibold text-gray-900">
+                                <?php if ($payment_link['payment_type'] === 'bank'): ?>
+                                    <?php echo e($payment_link['bank_name']); ?> (Bank Transfer)
+                                <?php else: ?>
+                                    <?php echo e($payment_link['method_name']); ?> (<?php echo e($payment_link['symbol']); ?>)
+                                <?php endif; ?>
+                            </p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500 mb-1">Amount</p>
@@ -142,7 +167,13 @@ function getStatusIcon($status) {
                     <div class="grid md:grid-cols-3 gap-4 text-left">
                         <div>
                             <p class="text-sm text-gray-500 mb-1">Payment Method</p>
-                            <p class="font-semibold text-gray-900"><?php echo e($payment_link['method_name']); ?></p>
+                            <p class="font-semibold text-gray-900">
+                                <?php if ($payment_link['payment_type'] === 'bank'): ?>
+                                    <?php echo e($payment_link['bank_name']); ?>
+                                <?php else: ?>
+                                    <?php echo e($payment_link['method_name']); ?>
+                                <?php endif; ?>
+                            </p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500 mb-1">Amount</p>
@@ -161,35 +192,62 @@ function getStatusIcon($status) {
             
             <?php else: ?>
             <!-- Active Payment -->
+            <?php 
+            $is_bank = ($payment_link['payment_type'] === 'bank');
+            $gradient_class = $is_bank ? 'gradient-green-teal' : 'gradient-purple-blue';
+            $badge_class = $is_bank ? 'bg-green-500' : 'bg-purple-500';
+            $border_class = $is_bank ? 'border-green-200' : 'border-purple-200';
+            ?>
             <div class="bg-white rounded-2xl shadow-xl overflow-hidden fade-in">
                 <!-- Header -->
-                <div class="gradient-purple-blue text-white p-8 text-center">
+                <div class="<?php echo $gradient_class; ?> text-white p-8 text-center">
                     <div class="flex items-center justify-center space-x-3 mb-4">
-                        <?php if ($payment_link['logo_path']): ?>
-                        <img src="<?php echo e($payment_link['logo_path']); ?>" alt="<?php echo e($payment_link['method_name']); ?>" class="h-16 object-contain">
+                        <?php if ($is_bank): ?>
+                            <?php if ($payment_link['bank_logo']): ?>
+                            <img src="<?php echo e($payment_link['bank_logo']); ?>" alt="<?php echo e($payment_link['bank_name']); ?>" class="h-16 object-contain">
+                            <?php else: ?>
+                            <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-4xl">
+                                🏦
+                            </div>
+                            <?php endif; ?>
                         <?php else: ?>
-                        <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-3xl font-bold">
-                            <?php echo e(substr($payment_link['symbol'], 0, 1)); ?>
-                        </div>
+                            <?php if ($payment_link['crypto_logo']): ?>
+                            <img src="<?php echo e($payment_link['crypto_logo']); ?>" alt="<?php echo e($payment_link['method_name']); ?>" class="h-16 object-contain">
+                            <?php else: ?>
+                            <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-3xl font-bold">
+                                <?php echo e(substr($payment_link['symbol'], 0, 1)); ?>
+                            </div>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </div>
                     <h1 class="text-3xl font-bold mb-2">Complete Your Payment</h1>
+                    <?php if ($is_bank): ?>
+                    <p class="text-green-100">Transfer funds to the bank account below</p>
+                    <?php else: ?>
                     <p class="text-purple-100">Send <?php echo e($payment_link['method_name']); ?> to the address below</p>
+                    <?php endif; ?>
                 </div>
 
                 <div class="p-8 md:p-12">
                     <!-- Payment Details -->
-                    <div class="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-6 mb-8">
+                    <div class="bg-gradient-to-br from-<?php echo $is_bank ? 'green' : 'purple'; ?>-50 to-<?php echo $is_bank ? 'teal' : 'blue'; ?>-50 rounded-xl p-6 mb-8">
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
                                 <p class="text-sm text-gray-500 mb-2">Payment Amount</p>
                                 <p class="text-3xl font-bold gradient-text"><?php echo e($payment_link['amount']); ?> <?php echo e($payment_link['currency']); ?></p>
                             </div>
                             <div>
-                                <p class="text-sm text-gray-500 mb-2">Payment Status</p>
-                                <span class="<?php echo getStatusBadgeClass($payment_link['status']); ?>">
-                                    <?php echo getStatusIcon($payment_link['status']); ?> <?php echo e(ucfirst($payment_link['status'])); ?>
+                                <p class="text-sm text-gray-500 mb-2">Payment Method</p>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold text-white <?php echo $badge_class; ?> mb-2">
+                                    <?php if ($is_bank): ?>
+                                    💳 Bank Transfer
+                                    <?php else: ?>
+                                    ₿ Crypto
+                                    <?php endif; ?>
                                 </span>
+                                <p class="text-sm text-gray-600 mt-1">
+                                    <?php echo e($is_bank ? $payment_link['bank_name'] : $payment_link['method_name']); ?>
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -212,10 +270,179 @@ function getStatusIcon($status) {
                     </div>
                     <?php endif; ?>
 
+                    <?php if ($is_bank): ?>
+                    <!-- Bank Payment Details -->
+                    
+                    <!-- Account Holder Name -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold mb-4 text-gray-900 flex items-center">
+                            <span class="w-8 h-8 <?php echo $gradient_class; ?> rounded-full flex items-center justify-center text-white text-sm mr-3">1</span>
+                            Account Holder Information
+                        </h3>
+                        <div class="bg-white border-2 <?php echo $border_class; ?> rounded-xl p-4">
+                            <p class="text-sm font-semibold text-gray-600 mb-2">Account Holder Name:</p>
+                            <div class="flex items-center justify-between">
+                                <code class="text-base font-semibold text-gray-800"><?php echo e($payment_link['account_holder_name']); ?></code>
+                                <button onclick="copyToClipboard('<?php echo e($payment_link['account_holder_name']); ?>', this)" class="px-4 py-2 <?php echo $gradient_class; ?> text-white rounded-lg font-semibold hover:shadow-lg copy-btn transition text-sm">
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bank Details -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold mb-4 text-gray-900 flex items-center">
+                            <span class="w-8 h-8 <?php echo $gradient_class; ?> rounded-full flex items-center justify-center text-white text-sm mr-3">2</span>
+                            Bank Account Details
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <!-- Bank Name -->
+                            <div class="bg-white border-2 <?php echo $border_class; ?> rounded-xl p-4">
+                                <p class="text-sm font-semibold text-gray-600 mb-2">Bank Name:</p>
+                                <p class="text-base font-semibold text-gray-800"><?php echo e($payment_link['bank_name']); ?></p>
+                                <?php if ($payment_link['country']): ?>
+                                <p class="text-sm text-gray-500 mt-1">Country: <?php echo e($payment_link['country']); ?></p>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- Account Type & Currency -->
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div class="bg-white border-2 <?php echo $border_class; ?> rounded-xl p-4">
+                                    <p class="text-sm font-semibold text-gray-600 mb-2">Account Type:</p>
+                                    <p class="text-base font-semibold text-gray-800 capitalize"><?php echo e($payment_link['account_type']); ?></p>
+                                </div>
+                                <div class="bg-white border-2 <?php echo $border_class; ?> rounded-xl p-4">
+                                    <p class="text-sm font-semibold text-gray-600 mb-2">Currency:</p>
+                                    <p class="text-base font-semibold text-gray-800"><?php echo e($payment_link['bank_currency']); ?></p>
+                                </div>
+                            </div>
+
+                            <!-- Account Number -->
+                            <div class="bg-white border-2 <?php echo $border_class; ?> rounded-xl p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <p class="text-sm font-semibold text-gray-600">Account Number:</p>
+                                    <button onclick="copyToClipboard('<?php echo e($payment_link['account_number']); ?>', this)" class="px-4 py-2 <?php echo $gradient_class; ?> text-white rounded-lg font-semibold hover:shadow-lg copy-btn transition text-sm">
+                                        Copy
+                                    </button>
+                                </div>
+                                <code class="block text-base font-mono text-gray-800 bg-gray-50 p-3 rounded break-all"><?php echo e($payment_link['account_number']); ?></code>
+                            </div>
+
+                            <!-- Routing Number -->
+                            <?php if ($payment_link['routing_number']): ?>
+                            <div class="bg-white border-2 <?php echo $border_class; ?> rounded-xl p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <p class="text-sm font-semibold text-gray-600">Routing Number:</p>
+                                    <button onclick="copyToClipboard('<?php echo e($payment_link['routing_number']); ?>', this)" class="px-4 py-2 <?php echo $gradient_class; ?> text-white rounded-lg font-semibold hover:shadow-lg copy-btn transition text-sm">
+                                        Copy
+                                    </button>
+                                </div>
+                                <code class="block text-base font-mono text-gray-800 bg-gray-50 p-3 rounded"><?php echo e($payment_link['routing_number']); ?></code>
+                            </div>
+                            <?php endif; ?>
+
+                            <!-- SWIFT/BIC Code -->
+                            <?php if ($payment_link['swift_bic_code']): ?>
+                            <div class="bg-white border-2 <?php echo $border_class; ?> rounded-xl p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <p class="text-sm font-semibold text-gray-600">SWIFT/BIC Code:</p>
+                                    <button onclick="copyToClipboard('<?php echo e($payment_link['swift_bic_code']); ?>', this)" class="px-4 py-2 <?php echo $gradient_class; ?> text-white rounded-lg font-semibold hover:shadow-lg copy-btn transition text-sm">
+                                        Copy
+                                    </button>
+                                </div>
+                                <code class="block text-base font-mono text-gray-800 bg-gray-50 p-3 rounded"><?php echo e($payment_link['swift_bic_code']); ?></code>
+                            </div>
+                            <?php endif; ?>
+
+                            <!-- Bank Address -->
+                            <?php if ($payment_link['bank_address']): ?>
+                            <div class="bg-white border-2 <?php echo $border_class; ?> rounded-xl p-4">
+                                <p class="text-sm font-semibold text-gray-600 mb-2">Bank Address:</p>
+                                <p class="text-sm text-gray-700"><?php echo e($payment_link['bank_address']); ?></p>
+                            </div>
+                            <?php endif; ?>
+
+                            <!-- Payment Reference -->
+                            <div class="bg-yellow-50 border-2 border-yellow-400 rounded-xl p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <p class="text-sm font-bold text-yellow-800">Payment Reference (Important!):</p>
+                                    <button onclick="copyToClipboard('<?php echo e($payment_link['unique_id']); ?>', this)" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-semibold hover:shadow-lg copy-btn transition text-sm">
+                                        Copy
+                                    </button>
+                                </div>
+                                <code class="block text-base font-mono font-bold text-gray-800 bg-white p-3 rounded break-all"><?php echo e($payment_link['unique_id']); ?></code>
+                                <p class="text-xs text-yellow-800 mt-2">⚠️ Include this reference in your transfer notes for verification</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bank Transfer Instructions -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold mb-4 text-gray-900 flex items-center">
+                            <span class="w-8 h-8 <?php echo $gradient_class; ?> rounded-full flex items-center justify-center text-white text-sm mr-3">3</span>
+                            Transfer Instructions
+                        </h3>
+                        <div class="bg-gray-50 rounded-xl p-6">
+                            <?php if ($payment_link['bank_instructions']): ?>
+                            <div class="mb-4 pb-4 border-b border-gray-200">
+                                <p class="text-gray-700 whitespace-pre-line"><?php echo e($payment_link['bank_instructions']); ?></p>
+                            </div>
+                            <?php endif; ?>
+                            <ol class="space-y-3 text-gray-700">
+                                <li class="flex items-start">
+                                    <span class="flex-shrink-0 w-6 h-6 gradient-green-teal rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 mt-0.5">1</span>
+                                    <span>Log in to your online banking or visit your bank branch</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="flex-shrink-0 w-6 h-6 gradient-green-teal rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 mt-0.5">2</span>
+                                    <span>Initiate a transfer to the account details shown above</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="flex-shrink-0 w-6 h-6 gradient-green-teal rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 mt-0.5">3</span>
+                                    <span>Transfer exactly <strong><?php echo e($payment_link['amount']); ?> <?php echo e($payment_link['currency']); ?></strong></span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="flex-shrink-0 w-6 h-6 gradient-green-teal rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 mt-0.5">4</span>
+                                    <span><strong>Important:</strong> Include payment reference <code class="bg-white px-2 py-1 rounded text-sm"><?php echo e($payment_link['unique_id']); ?></code> in the transfer notes</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="flex-shrink-0 w-6 h-6 gradient-green-teal rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 mt-0.5">5</span>
+                                    <span>Wait for the transfer to be processed (typically 1-3 business days)</span>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <!-- Bank Warning -->
+                    <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded mb-8">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h4 class="text-sm font-bold text-red-800 mb-1">Important Warnings</h4>
+                                <ul class="text-sm text-red-700 space-y-1 list-disc list-inside">
+                                    <li>Double-check all bank details before initiating the transfer</li>
+                                    <li>Always include the payment reference ID in your transfer notes</li>
+                                    <li>Transfers typically take 1-3 business days to process</li>
+                                    <li>Ensure the transfer amount matches exactly</li>
+                                    <li>Keep your transfer confirmation receipt for your records</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <?php else: ?>
+                    <!-- Crypto Payment Details -->
+                    
                     <!-- Wallet Address -->
                     <div class="mb-8">
                         <h3 class="text-lg font-bold mb-4 text-gray-900 flex items-center">
-                            <span class="w-8 h-8 gradient-purple-blue rounded-full flex items-center justify-center text-white text-sm mr-3">1</span>
+                            <span class="w-8 h-8 <?php echo $gradient_class; ?> rounded-full flex items-center justify-center text-white text-sm mr-3">1</span>
                             Send to This Wallet Address
                         </h3>
                         
@@ -231,10 +458,10 @@ function getStatusIcon($status) {
                         </div>
                         <?php endif; ?>
                         
-                        <div class="bg-white border-2 border-purple-200 rounded-xl p-4">
+                        <div class="bg-white border-2 <?php echo $border_class; ?> rounded-xl p-4">
                             <div class="flex items-center justify-between mb-2">
                                 <p class="text-sm font-semibold text-gray-600">Wallet Address:</p>
-                                <button onclick="copyAddress()" id="copy-btn" class="px-4 py-2 gradient-purple-blue text-white rounded-lg font-semibold hover:shadow-lg copy-btn transition text-sm">
+                                <button onclick="copyAddress()" id="copy-btn" class="px-4 py-2 <?php echo $gradient_class; ?> text-white rounded-lg font-semibold hover:shadow-lg copy-btn transition text-sm">
                                     Copy Address
                                 </button>
                             </div>
@@ -245,7 +472,7 @@ function getStatusIcon($status) {
                     <!-- QR Code -->
                     <div class="mb-8">
                         <h3 class="text-lg font-bold mb-4 text-gray-900 flex items-center">
-                            <span class="w-8 h-8 gradient-purple-blue rounded-full flex items-center justify-center text-white text-sm mr-3">2</span>
+                            <span class="w-8 h-8 <?php echo $gradient_class; ?> rounded-full flex items-center justify-center text-white text-sm mr-3">2</span>
                             Or Scan QR Code
                         </h3>
                         <div class="text-center">
@@ -257,7 +484,7 @@ function getStatusIcon($status) {
                     <!-- Payment Instructions -->
                     <div class="mb-8">
                         <h3 class="text-lg font-bold mb-4 text-gray-900 flex items-center">
-                            <span class="w-8 h-8 gradient-purple-blue rounded-full flex items-center justify-center text-white text-sm mr-3">3</span>
+                            <span class="w-8 h-8 <?php echo $gradient_class; ?> rounded-full flex items-center justify-center text-white text-sm mr-3">3</span>
                             Payment Instructions
                         </h3>
                         <div class="bg-gray-50 rounded-xl p-6">
@@ -305,6 +532,7 @@ function getStatusIcon($status) {
                             </div>
                         </div>
                     </div>
+                    <?php endif; ?>
 
                     <?php if ($payment_link['recipient_email']): ?>
                     <!-- Contact Info -->
@@ -346,12 +574,36 @@ function getStatusIcon($status) {
     <script src="assets/js/main.js"></script>
     <script>
         <?php if ($payment_link && !$error && !$is_expired && $payment_link['status'] === 'pending'): ?>
+        <?php if (!$is_bank): ?>
+        // Generate QR code only for crypto payments
         new QRCode(document.getElementById("qrcode"), {
             text: "<?php echo e($payment_link['wallet_address']); ?>",
             width: 200,
             height: 200
         });
+        <?php endif; ?>
 
+        // Copy to clipboard function (for bank payments)
+        function copyToClipboard(text, button) {
+            const originalText = button.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = '✓ Copied!';
+                button.classList.add('bg-green-500');
+                button.classList.remove('<?php echo $gradient_class; ?>');
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('bg-green-500');
+                    button.classList.add('<?php echo $gradient_class; ?>');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy. Please copy manually.');
+            });
+        }
+
+        // Copy address function (for crypto payments)
         function copyAddress() {
             const address = document.getElementById('wallet-address').textContent;
             const btn = document.getElementById('copy-btn');
