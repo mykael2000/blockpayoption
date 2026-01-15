@@ -277,18 +277,24 @@ function getStatusIcon($status) {
                         <div class="bg-white border-2 border-green-200 rounded-xl p-6 space-y-4">
                             <?php 
                             $bankDetails = formatBankDetails($payment_link);
-                            foreach ($bankDetails as $label => $value): 
+                            if (is_array($bankDetails) && !empty($bankDetails)):
+                                foreach ($bankDetails as $label => $value): 
                             ?>
                             <div class="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
                                 <div class="flex items-center justify-between mb-2">
                                     <p class="text-sm font-semibold text-gray-600"><?php echo e($label); ?>:</p>
-                                    <button onclick="copyDetail('<?php echo e($value); ?>', this)" class="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-semibold text-xs transition">
+                                    <button data-copy-value="<?php echo e($value); ?>" class="copy-detail-btn px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-semibold text-xs transition">
                                         Copy
                                     </button>
                                 </div>
                                 <code class="block text-sm md:text-base font-mono break-all text-gray-800 bg-gray-50 p-3 rounded"><?php echo e($value); ?></code>
                             </div>
-                            <?php endforeach; ?>
+                            <?php 
+                                endforeach;
+                            else:
+                            ?>
+                            <p class="text-gray-500 text-sm">Bank details are not available.</p>
+                            <?php endif; ?>
                         </div>
                     </div>
                     
@@ -535,23 +541,28 @@ function getStatusIcon($status) {
         }
         <?php else: ?>
         // Copy bank detail function for bank payments
-        function copyDetail(value, btn) {
-            navigator.clipboard.writeText(value).then(() => {
-                const originalText = btn.textContent;
-                btn.textContent = '✓ Copied!';
-                btn.classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
-                btn.classList.add('bg-green-600');
-                
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.classList.remove('bg-green-600');
-                    btn.classList.add('bg-emerald-500', 'hover:bg-emerald-600');
-                }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy:', err);
-                alert('Failed to copy. Please copy manually.');
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.copy-detail-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const value = this.getAttribute('data-copy-value');
+                    navigator.clipboard.writeText(value).then(() => {
+                        const originalText = this.textContent;
+                        this.textContent = '✓ Copied!';
+                        this.classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
+                        this.classList.add('bg-green-600');
+                        
+                        setTimeout(() => {
+                            this.textContent = originalText;
+                            this.classList.remove('bg-green-600');
+                            this.classList.add('bg-emerald-500', 'hover:bg-emerald-600');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        alert('Failed to copy. Please copy manually.');
+                    });
+                });
             });
-        }
+        });
         <?php endif; ?>
 
         <?php if ($payment_link['expires_at']): ?>
