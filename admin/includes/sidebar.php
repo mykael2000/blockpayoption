@@ -9,41 +9,44 @@ function is_active($page, $dir = '') {
     }
     return $current_page === $page ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:bg-gray-100';
 }
+
+// Determine admin base URL
+$admin_base = BASE_URL . '/admin';
 ?>
 <aside class="w-64 bg-white shadow-lg min-h-screen">
     <nav class="p-4 space-y-2">
         <!-- Dashboard -->
-        <a href="/admin/dashboard.php" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition <?= is_active('dashboard.php') ?>">
+        <a href="<?= $admin_base ?>/dashboard.php" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition <?= is_active('dashboard.php') ?>">
             <span class="text-xl">📊</span>
             <span class="font-medium">Dashboard</span>
         </a>
         
         <!-- Payment Methods -->
-        <a href="/admin/payment-methods/index.php" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition <?= is_active('', 'payment-methods') ?>">
+        <a href="<?= $admin_base ?>/payment-methods/index.php" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition <?= is_active('', 'payment-methods') ?>">
             <span class="text-xl">💳</span>
             <span class="font-medium">Crypto Payment Methods</span>
         </a>
         
         <!-- Bank Payment Methods -->
-        <a href="/admin/bank-methods/index.php" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition <?= is_active('', 'bank-methods') ?>">
+        <a href="<?= $admin_base ?>/bank-methods/index.php" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition <?= is_active('', 'bank-methods') ?>">
             <span class="text-xl">🏦</span>
             <span class="font-medium">Bank Payment Methods</span>
         </a>
         
         <!-- Tutorials -->
-        <a href="/admin/tutorials/index.php" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition <?= is_active('', 'tutorials') ?>">
+        <a href="<?= $admin_base ?>/tutorials/index.php" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition <?= is_active('', 'tutorials') ?>">
             <span class="text-xl">📚</span>
             <span class="font-medium">Tutorials</span>
         </a>
         
         <!-- Platforms -->
-        <a href="/admin/platforms/index.php" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition <?= is_active('', 'platforms') ?>">
+        <a href="<?= $admin_base ?>/platforms/index.php" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition <?= is_active('', 'platforms') ?>">
             <span class="text-xl">🏢</span>
             <span class="font-medium">Platforms</span>
         </a>
         
         <!-- Payment Links -->
-        <a href="/admin/payment-links/index.php" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition <?= is_active('', 'payment-links') ?>">
+        <a href="<?= $admin_base ?>/payment-links/index.php" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition <?= is_active('', 'payment-links') ?>">
             <span class="text-xl">🔗</span>
             <span class="font-medium">Payment Links</span>
         </a>

@@ -17,7 +17,13 @@ try {
     
     $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
 } catch (PDOException $e) {
-    // Log error (in production, log to file instead of displaying)
+    // Log the error
     error_log("Database Connection Error: " . $e->getMessage());
-    die("Database connection failed. Please try again later.");
+    
+    // Display user-friendly message
+    if (ini_get('display_errors')) {
+        die("Database connection failed: " . $e->getMessage());
+    } else {
+        die("Database connection failed. Please check your configuration.");
+    }
 }

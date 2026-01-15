@@ -1,5 +1,16 @@
+# Display PHP errors (development only - disable in production)
+# php_flag display_errors on
+# php_value error_reporting E_ALL
+
+# Custom error pages
+ErrorDocument 404 /404.php
+ErrorDocument 500 /500.php
+
+# Security
+Options -Indexes
+
 # Force PHP execution
-AddHandler application/x-httpd-php . php . html .htm
+AddHandler application/x-httpd-php .php .html .htm
 AddType application/x-httpd-php .php .html .htm
 
 # Ensure PHP is enabled
@@ -7,5 +18,14 @@ AddType application/x-httpd-php .php .html .htm
     SetHandler application/x-httpd-php
 </FilesMatch>
 
-# Security
-Options -Indexes
+# Protect sensitive files
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Protect configuration and sensitive files
+<FilesMatch "(^#.*#|\.(bak|conf|dist|fla|in[ci]|log|psd|sh|sql|sw[op])|~)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

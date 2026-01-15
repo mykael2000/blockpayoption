@@ -15,7 +15,13 @@ function e($string) {
 /**
  * Redirect to a URL
  */
-function redirect($url) {
+function redirect($path) {
+    // If path starts with /, treat as absolute from site root
+    if (strpos($path, '/') === 0) {
+        $url = BASE_URL . $path;
+    } else {
+        $url = $path;
+    }
     header("Location: $url");
     exit;
 }

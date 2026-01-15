@@ -8,12 +8,12 @@
         </div>
         
         <div class="flex items-center space-x-4">
-            <a href="/" target="_blank" class="text-gray-600 hover:text-purple-600 transition text-sm">
+            <a href="<?= BASE_URL ?>/" target="_blank" class="text-gray-600 hover:text-purple-600 transition text-sm">
                 View Site →
             </a>
             <div class="border-l pl-4">
                 <span class="text-sm text-gray-600"><?= e($_SESSION['admin_username']) ?></span>
-                <a href="/admin/logout.php" class="ml-3 text-sm text-red-600 hover:text-red-700 font-medium">
+                <a href="<?= BASE_URL ?>/admin/logout.php" class="ml-3 text-sm text-red-600 hover:text-red-700 font-medium">
                     Logout
                 </a>
             </div>
