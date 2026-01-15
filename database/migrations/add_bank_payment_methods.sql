@@ -42,8 +42,26 @@ ALTER TABLE payment_links
 ALTER TABLE payment_links 
     MODIFY COLUMN payment_method_id INT NULL;
 
--- Drop old foreign key constraint
-ALTER TABLE payment_links DROP FOREIGN KEY payment_links_ibfk_1;
+-- Drop old foreign key constraint (if exists)
+-- Note: The constraint name may vary. This attempts to drop the common auto-generated name.
+-- If it fails, manually drop the constraint with: SHOW CREATE TABLE payment_links; to find the name
+SET @constraint_name = (
+    SELECT CONSTRAINT_NAME 
+    FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
+    WHERE TABLE_SCHEMA = 'blockpayoption' 
+    AND TABLE_NAME = 'payment_links' 
+    AND COLUMN_NAME = 'payment_method_id' 
+    AND REFERENCED_TABLE_NAME = 'payment_methods'
+    LIMIT 1
+);
+
+SET @sql_drop = IF(@constraint_name IS NOT NULL, 
+    CONCAT('ALTER TABLE payment_links DROP FOREIGN KEY ', @constraint_name), 
+    'SELECT "No foreign key constraint found to drop"');
+
+PREPARE stmt FROM @sql_drop;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- Re-add foreign key with proper naming
 ALTER TABLE payment_links
