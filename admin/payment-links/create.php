@@ -11,13 +11,22 @@ require_once __DIR__ . '/../../includes/functions.php';
 require_auth();
 check_session_timeout();
 
-// Get active payment methods
+// Get active payment methods (crypto)
 try {
     $stmt = $pdo->query("SELECT id, name, symbol FROM payment_methods WHERE is_active = 1 ORDER BY display_order ASC");
     $payment_methods = $stmt->fetchAll();
 } catch (PDOException $e) {
     error_log("Payment methods fetch error: " . $e->getMessage());
     $payment_methods = [];
+}
+
+// Get active bank payment methods
+try {
+    $stmt = $pdo->query("SELECT id, bank_name, account_holder_name, currency FROM bank_payment_methods WHERE is_active = 1 ORDER BY display_order ASC");
+    $bank_methods = $stmt->fetchAll();
+} catch (PDOException $e) {
+    error_log("Bank methods fetch error: " . $e->getMessage());
+    $bank_methods = [];
 }
 
 // Handle form submission
@@ -30,14 +39,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $errors = [];
     
     // Validate required fields
+    $payment_type = $_POST['payment_type'] ?? 'crypto';
     $payment_method_id = filter_var($_POST['payment_method_id'] ?? '', FILTER_VALIDATE_INT);
+    $bank_payment_method_id = filter_var($_POST['bank_payment_method_id'] ?? '', FILTER_VALIDATE_INT);
     $amount = trim($_POST['amount'] ?? '');
     $recipient_email = trim($_POST['recipient_email'] ?? '');
     $expiry_option = $_POST['expiry_option'] ?? 'custom';
     $expires_at = null;
 
-    if (!$payment_method_id) {
-        $errors[] = 'Please select a payment method.';
+    if ($payment_type === 'crypto' && !$payment_method_id) {
+        $errors[] = 'Please select a crypto payment method.';
+    }
+    
+    if ($payment_type === 'bank' && !$bank_payment_method_id) {
+        $errors[] = 'Please select a bank payment method.';
     }
 
     if (empty($amount) || !is_numeric($amount) || floatval($amount) <= 0) {
@@ -61,25 +76,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
         // Get currency from selected payment method
         try {
-            $stmt = $pdo->prepare("SELECT symbol FROM payment_methods WHERE id = ?");
-            $stmt->execute([$payment_method_id]);
-            $currency = $stmt->fetchColumn();
-
-            if (!$currency) {
-                $errors[] = 'Invalid payment method selected.';
+            if ($payment_type === 'crypto') {
+                $stmt = $pdo->prepare("SELECT symbol FROM payment_methods WHERE id = ?");
+                $stmt->execute([$payment_method_id]);
+                $currency = $stmt->fetchColumn();
+                
+                if (!$currency) {
+                    $errors[] = 'Invalid crypto payment method selected.';
+                }
             } else {
+                $stmt = $pdo->prepare("SELECT currency FROM bank_payment_methods WHERE id = ?");
+                $stmt->execute([$bank_payment_method_id]);
+                $currency = $stmt->fetchColumn();
+                
+                if (!$currency) {
+                    $errors[] = 'Invalid bank payment method selected.';
+                }
+            }
+
+            if (!isset($errors[0])) {
                 // Generate unique ID
-                $unique_id = generate_unique_id('pay-');
+                $unique_id = generate_unique_id($payment_type === 'bank' ? 'bank-' : 'pay-');
 
                 // Insert payment link
                 $stmt = $pdo->prepare("
                     INSERT INTO payment_links 
-                    (unique_id, payment_method_id, amount, currency, recipient_email, status, expires_at) 
-                    VALUES (?, ?, ?, ?, ?, 'pending', ?)
+                    (unique_id, payment_type, payment_method_id, bank_payment_method_id, amount, currency, recipient_email, status, expires_at) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?)
                 ");
                 $stmt->execute([
                     $unique_id,
-                    $payment_method_id,
+                    $payment_type,
+                    $payment_type === 'crypto' ? $payment_method_id : null,
+                    $payment_type === 'bank' ? $bank_payment_method_id : null,
                     floatval($amount),
                     $currency,
                     $recipient_email ?: null,
@@ -128,7 +157,7 @@ $page_title = 'Create Payment Link';
                     ← Back to Payment Links
                 </a>
                 <h1 class="text-3xl font-bold text-gray-800">Create Payment Link</h1>
-                <p class="text-gray-600 mt-1">Generate a new cryptocurrency payment link</p>
+                <p class="text-gray-600 mt-1">Generate a new payment link for cryptocurrency or bank transfer</p>
             </div>
 
             <!-- Flash Messages -->
@@ -144,18 +173,42 @@ $page_title = 'Create Payment Link';
                     <form method="POST" id="createLinkForm">
                         <?= csrf_field() ?>
 
-                        <!-- Payment Method -->
+                        <!-- Payment Type Selection -->
                         <div class="mb-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                Payment Type <span class="text-red-500">*</span>
+                            </label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <label class="relative flex items-center justify-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-purple-500 transition" id="crypto-type-label">
+                                    <input type="radio" name="payment_type" value="crypto" class="sr-only" <?= (!isset($_POST['payment_type']) || $_POST['payment_type'] === 'crypto') ? 'checked' : '' ?>>
+                                    <div class="text-center">
+                                        <div class="text-3xl mb-2">💳</div>
+                                        <div class="font-semibold text-gray-800">Cryptocurrency</div>
+                                        <div class="text-xs text-gray-500 mt-1">Bitcoin, Ethereum, USDT, etc.</div>
+                                    </div>
+                                </label>
+                                <label class="relative flex items-center justify-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-emerald-500 transition" id="bank-type-label">
+                                    <input type="radio" name="payment_type" value="bank" class="sr-only" <?= (isset($_POST['payment_type']) && $_POST['payment_type'] === 'bank') ? 'checked' : '' ?>>
+                                    <div class="text-center">
+                                        <div class="text-3xl mb-2">🏦</div>
+                                        <div class="font-semibold text-gray-800">Bank Transfer</div>
+                                        <div class="text-xs text-gray-500 mt-1">Traditional bank payments</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Crypto Payment Method -->
+                        <div class="mb-6" id="crypto-method-section">
                             <label for="payment_method_id" class="block text-sm font-semibold text-gray-700 mb-2">
-                                Payment Method <span class="text-red-500">*</span>
+                                Crypto Payment Method <span class="text-red-500">*</span>
                             </label>
                             <select 
                                 name="payment_method_id" 
                                 id="payment_method_id" 
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                                required
                             >
-                                <option value="">Select a payment method</option>
+                                <option value="">Select a crypto payment method</option>
                                 <?php foreach ($payment_methods as $pm): ?>
                                     <option value="<?= $pm['id'] ?>" data-symbol="<?= e($pm['symbol']) ?>" <?= (isset($_POST['payment_method_id']) && $_POST['payment_method_id'] == $pm['id']) ? 'selected' : '' ?>>
                                         <?= e($pm['name']) ?> (<?= e($pm['symbol']) ?>)
@@ -163,6 +216,26 @@ $page_title = 'Create Payment Link';
                                 <?php endforeach; ?>
                             </select>
                             <p class="mt-2 text-sm text-gray-500">Choose the cryptocurrency for this payment</p>
+                        </div>
+                        
+                        <!-- Bank Payment Method -->
+                        <div class="mb-6 hidden" id="bank-method-section">
+                            <label for="bank_payment_method_id" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Bank Payment Method <span class="text-red-500">*</span>
+                            </label>
+                            <select 
+                                name="bank_payment_method_id" 
+                                id="bank_payment_method_id" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                            >
+                                <option value="">Select a bank payment method</option>
+                                <?php foreach ($bank_methods as $bm): ?>
+                                    <option value="<?= $bm['id'] ?>" data-currency="<?= e($bm['currency']) ?>" <?= (isset($_POST['bank_payment_method_id']) && $_POST['bank_payment_method_id'] == $bm['id']) ? 'selected' : '' ?>>
+                                        <?= e($bm['bank_name']) ?> - <?= e($bm['account_holder_name']) ?> (<?= e($bm['currency']) ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="mt-2 text-sm text-gray-500">Choose the bank account for this payment</p>
                         </div>
 
                         <!-- Amount -->
@@ -276,15 +349,68 @@ $page_title = 'Create Payment Link';
     </div>
 
     <script>
-        // Update currency label when payment method changes
-        document.getElementById('payment_method_id').addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const symbol = selectedOption.getAttribute('data-symbol');
-            document.getElementById('currency_label').textContent = symbol || '';
+        // Payment type switcher
+        const paymentTypeRadios = document.querySelectorAll('input[name="payment_type"]');
+        const cryptoSection = document.getElementById('crypto-method-section');
+        const bankSection = document.getElementById('bank-method-section');
+        const cryptoLabel = document.getElementById('crypto-type-label');
+        const bankLabel = document.getElementById('bank-type-label');
+        
+        function updatePaymentType() {
+            const selectedType = document.querySelector('input[name="payment_type"]:checked').value;
+            
+            if (selectedType === 'crypto') {
+                cryptoSection.classList.remove('hidden');
+                bankSection.classList.add('hidden');
+                cryptoLabel.classList.add('border-purple-500', 'bg-purple-50');
+                cryptoLabel.classList.remove('border-gray-300');
+                bankLabel.classList.remove('border-emerald-500', 'bg-emerald-50');
+                bankLabel.classList.add('border-gray-300');
+                document.getElementById('payment_method_id').required = true;
+                document.getElementById('bank_payment_method_id').required = false;
+            } else {
+                cryptoSection.classList.add('hidden');
+                bankSection.classList.remove('hidden');
+                bankLabel.classList.add('border-emerald-500', 'bg-emerald-50');
+                bankLabel.classList.remove('border-gray-300');
+                cryptoLabel.classList.remove('border-purple-500', 'bg-purple-50');
+                cryptoLabel.classList.add('border-gray-300');
+                document.getElementById('payment_method_id').required = false;
+                document.getElementById('bank_payment_method_id').required = true;
+            }
+            
+            // Update currency label
+            updateCurrencyLabel();
+        }
+        
+        paymentTypeRadios.forEach(radio => {
+            radio.addEventListener('change', updatePaymentType);
         });
+        
+        // Initialize on page load
+        updatePaymentType();
+        
+        // Update currency label when payment method changes
+        function updateCurrencyLabel() {
+            const paymentType = document.querySelector('input[name="payment_type"]:checked').value;
+            let symbol = '';
+            
+            if (paymentType === 'crypto') {
+                const selectedOption = document.getElementById('payment_method_id').options[document.getElementById('payment_method_id').selectedIndex];
+                symbol = selectedOption.getAttribute('data-symbol') || '';
+            } else {
+                const selectedOption = document.getElementById('bank_payment_method_id').options[document.getElementById('bank_payment_method_id').selectedIndex];
+                symbol = selectedOption.getAttribute('data-currency') || '';
+            }
+            
+            document.getElementById('currency_label').textContent = symbol;
+        }
+        
+        document.getElementById('payment_method_id').addEventListener('change', updateCurrencyLabel);
+        document.getElementById('bank_payment_method_id').addEventListener('change', updateCurrencyLabel);
 
         // Trigger on page load to set initial value
-        document.getElementById('payment_method_id').dispatchEvent(new Event('change'));
+        updateCurrencyLabel();
 
         // Show/hide custom expiry date input
         const expiryRadios = document.querySelectorAll('input[name="expiry_option"]');
