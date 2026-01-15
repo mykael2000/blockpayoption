@@ -286,6 +286,7 @@ $page_title = 'Payment Link Details';
                         <button 
                             onclick="copyToClipboard('<?= e($payment_url) ?>')"
                             class="w-full px-6 py-3 bg-white text-<?= $is_bank ? 'emerald' : 'purple' ?>-600 rounded-lg hover:bg-opacity-90 transition font-medium"
+                            data-theme-color="<?= $is_bank ? 'emerald' : 'purple' ?>"
                         >
                             📋 Copy Link to Clipboard
                         </button>
@@ -440,15 +441,18 @@ $page_title = 'Payment Link Details';
                 // Show success feedback
                 const button = event.target;
                 const originalText = button.innerHTML;
+                const themeColor = button.getAttribute('data-theme-color') || 'purple';
+                const textClass = `text-${themeColor}-600`;
+                
                 button.innerHTML = '✅ Copied!';
                 button.classList.add('bg-green-500');
-                button.classList.remove('bg-white', '<?= $is_bank ? "text-emerald-600" : "text-purple-600" ?>');
+                button.classList.remove('bg-white', textClass);
                 button.classList.add('text-white');
                 
                 setTimeout(function() {
                     button.innerHTML = originalText;
                     button.classList.remove('bg-green-500', 'text-white');
-                    button.classList.add('bg-white', '<?= $is_bank ? "text-emerald-600" : "text-purple-600" ?>');
+                    button.classList.add('bg-white', textClass);
                 }, 2000);
             }, function(err) {
                 alert('Failed to copy: ' + err);
@@ -459,14 +463,17 @@ $page_title = 'Payment Link Details';
         function copyBankDetail(text, button) {
             navigator.clipboard.writeText(text).then(function() {
                 const originalText = button.innerHTML;
+                const themeColor = '<?= $is_bank ? "emerald" : "purple" ?>';
+                const bgClass = `bg-${themeColor}-600`;
+                
                 button.innerHTML = '✅ Copied!';
                 button.classList.add('bg-green-600');
-                button.classList.remove('<?= $is_bank ? "bg-emerald-600" : "bg-purple-600" ?>');
+                button.classList.remove(bgClass);
                 
                 setTimeout(function() {
                     button.innerHTML = originalText;
                     button.classList.remove('bg-green-600');
-                    button.classList.add('<?= $is_bank ? "bg-emerald-600" : "bg-purple-600" ?>');
+                    button.classList.add(bgClass);
                 }, 2000);
             }, function(err) {
                 alert('Failed to copy: ' + err);
