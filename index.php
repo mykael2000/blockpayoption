@@ -6,7 +6,13 @@ require_once 'includes/functions.php';
 try {
     $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM payment_methods WHERE is_active = 1");
     $stmt->execute();
-    $payment_methods_count = $stmt->fetch()['count'];
+    $crypto_methods_count = $stmt->fetch()['count'];
+    
+    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM bank_payment_methods WHERE is_active = 1");
+    $stmt->execute();
+    $bank_methods_count = $stmt->fetch()['count'];
+    
+    $payment_methods_count = $crypto_methods_count + $bank_methods_count;
     
     $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM tutorials WHERE is_published = 1");
     $stmt->execute();
@@ -16,9 +22,17 @@ try {
     $stmt->execute();
     $platforms_count = $stmt->fetch()['count'];
     
-    $stmt = $pdo->prepare("SELECT * FROM payment_methods WHERE is_active = 1 ORDER BY display_order LIMIT 3");
+    // Fetch featured crypto methods
+    $stmt = $pdo->prepare("SELECT * FROM payment_methods WHERE is_active = 1 ORDER BY display_order LIMIT 2");
     $stmt->execute();
-    $featured_methods = $stmt->fetchAll();
+    $featured_crypto = $stmt->fetchAll();
+    
+    // Fetch featured bank methods
+    $stmt = $pdo->prepare("SELECT * FROM bank_payment_methods WHERE is_active = 1 ORDER BY display_order LIMIT 1");
+    $stmt->execute();
+    $featured_banks = $stmt->fetchAll();
+    
+    $featured_methods = array_merge($featured_crypto, $featured_banks);
 } catch (PDOException $e) {
     $error = "Database error occurred";
 }
@@ -145,6 +159,7 @@ try {
                     </div>
                     <div class="text-4xl font-bold gradient-text mb-2"><?php echo e($payment_methods_count); ?>+</div>
                     <div class="text-gray-600 font-medium">Payment Methods</div>
+                    <div class="text-sm text-gray-500 mt-1"><?php echo e($crypto_methods_count); ?> Crypto + <?php echo e($bank_methods_count); ?> Bank</div>
                 </div>
                 <div class="text-center animate-on-scroll" style="animation-delay: 0.2s">
                     <div class="inline-block p-4 gradient-blue-teal rounded-full mb-4">
@@ -277,41 +292,73 @@ try {
             <div class="text-center mb-16 animate-on-scroll">
                 <h2 class="text-4xl font-bold mb-4 gradient-text">Popular Payment Methods</h2>
                 <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                    Start accepting these cryptocurrencies today
+                    Start accepting cryptocurrency and bank transfers today
                 </p>
             </div>
 
             <?php if (!empty($featured_methods)): ?>
             <div class="grid md:grid-cols-3 gap-8 mb-12">
                 <?php foreach ($featured_methods as $index => $method): ?>
-                <div class="bg-white border-2 border-gray-200 rounded-2xl p-8 hover:border-purple-400 hover:shadow-xl card-hover animate-on-scroll" style="animation-delay: <?php echo $index * 0.2; ?>s">
-                    <div class="flex items-center justify-between mb-6">
-                        <?php if ($method['logo_path']): ?>
-                        <img src="<?php echo e($method['logo_path']); ?>" alt="<?php echo e($method['name']); ?>" class="w-16 h-16 object-contain">
-                        <?php else: ?>
-                        <div class="w-16 h-16 gradient-purple-blue rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                            <?php echo e(substr($method['symbol'], 0, 1)); ?>
+                <?php 
+                $is_bank = isset($method['bank_name']);
+                $gradient_class = $is_bank ? 'gradient-green-teal' : 'gradient-purple-blue';
+                $border_class = $is_bank ? 'hover:border-green-400' : 'hover:border-purple-400';
+                ?>
+                <div class="bg-white border-2 border-gray-200 rounded-2xl p-8 <?php echo $border_class; ?> hover:shadow-xl card-hover animate-on-scroll" style="animation-delay: <?php echo $index * 0.2; ?>s">
+                    <?php if ($is_bank): ?>
+                        <!-- Bank Method Card -->
+                        <div class="flex items-center justify-between mb-6">
+                            <?php if ($method['logo_path']): ?>
+                            <img src="<?php echo e($method['logo_path']); ?>" alt="<?php echo e($method['bank_name']); ?>" class="w-16 h-16 object-contain">
+                            <?php else: ?>
+                            <div class="w-16 h-16 gradient-green-teal rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                                🏦
+                            </div>
+                            <?php endif; ?>
+                            <span class="px-4 py-2 bg-green-100 text-green-800 rounded-full font-bold text-sm">
+                                <?php echo e($method['currency']); ?>
+                            </span>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-900"><?php echo e($method['bank_name']); ?></h3>
+                        <p class="text-gray-600 mb-6">
+                            Bank Transfer • <?php echo e($method['country'] ?? 'International'); ?>
+                            <br>Account Type: <?php echo e(ucfirst($method['account_type'])); ?>
+                        </p>
+                        <div class="mb-6">
+                            <span class="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
+                                🏦 Bank Transfer
+                            </span>
+                        </div>
+                    <?php else: ?>
+                        <!-- Crypto Method Card -->
+                        <div class="flex items-center justify-between mb-6">
+                            <?php if ($method['logo_path']): ?>
+                            <img src="<?php echo e($method['logo_path']); ?>" alt="<?php echo e($method['name']); ?>" class="w-16 h-16 object-contain">
+                            <?php else: ?>
+                            <div class="w-16 h-16 gradient-purple-blue rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                                <?php echo e(substr($method['symbol'], 0, 1)); ?>
+                            </div>
+                            <?php endif; ?>
+                            <span class="px-4 py-2 gradient-blue-teal text-white rounded-full font-bold text-sm">
+                                <?php echo e($method['symbol']); ?>
+                            </span>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-900"><?php echo e($method['name']); ?></h3>
+                        <p class="text-gray-600 mb-6">
+                            <?php echo e(truncate($method['description'], 120)); ?>
+                        </p>
+                        <?php if ($method['networks']): ?>
+                        <div class="mb-6">
+                            <?php 
+                            $networks = explode(',', $method['networks']);
+                            foreach (array_slice($networks, 0, 2) as $network): 
+                            ?>
+                            <span class="network-badge"><?php echo e(trim($network)); ?></span>
+                            <?php endforeach; ?>
                         </div>
                         <?php endif; ?>
-                        <span class="px-4 py-2 gradient-blue-teal text-white rounded-full font-bold text-sm">
-                            <?php echo e($method['symbol']); ?>
-                        </span>
-                    </div>
-                    <h3 class="text-2xl font-bold mb-4 text-gray-900"><?php echo e($method['name']); ?></h3>
-                    <p class="text-gray-600 mb-6">
-                        <?php echo e(truncate($method['description'], 120)); ?>
-                    </p>
-                    <?php if ($method['networks']): ?>
-                    <div class="mb-6">
-                        <?php 
-                        $networks = explode(',', $method['networks']);
-                        foreach (array_slice($networks, 0, 2) as $network): 
-                        ?>
-                        <span class="network-badge"><?php echo e(trim($network)); ?></span>
-                        <?php endforeach; ?>
-                    </div>
                     <?php endif; ?>
-                    <a href="payment-methods.php" class="block text-center px-6 py-3 gradient-purple-blue text-white rounded-lg font-semibold hover:shadow-lg transition">
+                    <a href="payment-methods.php" class="block text-center px-6 py-3 <?php echo $gradient_class; ?> text-white rounded-lg font-semibold hover:shadow-lg transition">
                         View Details
                     </a>
                 </div>
