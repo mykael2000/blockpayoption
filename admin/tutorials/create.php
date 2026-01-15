@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Delete uploaded image if database insert failed
             if ($image_path) {
-                delete_file($image_path);
+                delete_file(basename($image_path));
             }
         }
     }
