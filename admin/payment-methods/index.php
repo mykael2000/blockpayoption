@@ -36,11 +36,11 @@ $page_title = 'Payment Methods';
 </head>
 <body class="bg-gray-50">
     <!-- Navigation -->
-    <?php include __DIR__ . '/../includes/nav.php'; ?>
+    <?php require_once __DIR__ . '/../includes/nav.php'; ?>
     
     <div class="flex">
         <!-- Sidebar -->
-        <?php include __DIR__ . '/../includes/sidebar.php'; ?>
+        <?php require_once __DIR__ . '/../includes/sidebar.php'; ?>
         
         <!-- Main Content -->
         <main class="flex-1 p-8">
