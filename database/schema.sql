@@ -119,4 +119,4 @@ INSERT INTO platforms (name, description, website_url, rating, pros, cons, displ
 
 -- Sample payment link (for demonstration)
 INSERT INTO payment_links (unique_id, payment_method_id, amount, currency, recipient_email, status, expires_at) VALUES
-('demo-' || UNIX_TIMESTAMP(), 1, 0.0015, 'BTC', 'customer@example.com', 'pending', DATE_ADD(NOW(), INTERVAL 7 DAY));
+(CONCAT('demo-', UNIX_TIMESTAMP()), 1, 0.0015, 'BTC', 'customer@example.com', 'pending', DATE_ADD(NOW(), INTERVAL 7 DAY));

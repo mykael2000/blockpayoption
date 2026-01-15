@@ -12,13 +12,21 @@ if (!in_array($sort_by, $allowed_sorts)) {
 }
 
 try {
-    $order_clause = match($sort_by) {
-        'rating' => 'rating DESC',
-        'name' => 'name ASC',
-        default => 'display_order ASC'
-    };
+    $sql = "SELECT * FROM platforms WHERE is_active = 1 ORDER BY ";
     
-    $stmt = $pdo->prepare("SELECT * FROM platforms WHERE is_active = 1 ORDER BY {$order_clause}");
+    switch($sort_by) {
+        case 'rating':
+            $sql .= 'rating DESC';
+            break;
+        case 'name':
+            $sql .= 'name ASC';
+            break;
+        default:
+            $sql .= 'display_order ASC';
+            break;
+    }
+    
+    $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $platforms = $stmt->fetchAll();
 } catch (PDOException $e) {

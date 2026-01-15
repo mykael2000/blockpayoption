@@ -171,7 +171,7 @@ $category_colors = [
                         <p class="text-gray-600 mb-4 text-sm">
                             <?php 
                             $clean_content = strip_tags($tutorial['content']);
-                            echo e(truncate($clean_content, 120));
+                            echo truncate(e($clean_content), 120);
                             ?>
                         </p>
                         
