@@ -308,3 +308,117 @@ window.setButtonLoading = setButtonLoading;
 window.fetchJSON = fetchJSON;
 window.toast = toast;
 window.startCountdown = startCountdown;
+
+/**
+ * Filter payment methods by type (all, crypto, bank)
+ */
+function filterPaymentMethods(type) {
+    const cards = document.querySelectorAll('.payment-method-card');
+    const tabs = document.querySelectorAll('.filter-tab');
+    
+    // Update active tab styling
+    tabs.forEach(tab => {
+        const tabFilter = tab.getAttribute('data-filter');
+        if (tabFilter === type) {
+            tab.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-purple-100', 'hover:bg-emerald-100');
+            if (type === 'all') {
+                tab.classList.add('bg-gray-600', 'text-white');
+            } else if (type === 'crypto') {
+                tab.classList.add('bg-purple-600', 'text-white');
+            } else if (type === 'bank') {
+                tab.classList.add('bg-emerald-600', 'text-white');
+            }
+        } else {
+            tab.classList.remove('bg-gray-600', 'bg-purple-600', 'bg-emerald-600', 'text-white');
+            tab.classList.add('bg-gray-200', 'text-gray-700');
+            if (tabFilter === 'crypto') {
+                tab.classList.add('hover:bg-purple-100');
+            } else if (tabFilter === 'bank') {
+                tab.classList.add('hover:bg-emerald-100');
+            }
+        }
+    });
+    
+    // Filter cards with smooth transition
+    cards.forEach(card => {
+        const cardType = card.getAttribute('data-payment-type');
+        
+        if (type === 'all' || cardType === type) {
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.9)';
+            card.style.display = '';
+            
+            setTimeout(() => {
+                card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'scale(1)';
+            }, 10);
+        } else {
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.9)';
+            
+            setTimeout(() => {
+                card.style.display = 'none';
+            }, 300);
+        }
+    });
+}
+
+/**
+ * Filter featured payment methods on homepage
+ */
+function filterFeaturedMethods(type) {
+    const cards = document.querySelectorAll('.featured-payment-card');
+    const tabs = document.querySelectorAll('.featured-filter-tab');
+    
+    // Update active tab styling
+    tabs.forEach(tab => {
+        const tabFilter = tab.getAttribute('data-featured-filter');
+        if (tabFilter === type) {
+            tab.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-purple-100', 'hover:bg-emerald-100');
+            if (type === 'all') {
+                tab.classList.add('bg-gray-600', 'text-white');
+            } else if (type === 'crypto') {
+                tab.classList.add('bg-purple-600', 'text-white');
+            } else if (type === 'bank') {
+                tab.classList.add('bg-emerald-600', 'text-white');
+            }
+        } else {
+            tab.classList.remove('bg-gray-600', 'bg-purple-600', 'bg-emerald-600', 'text-white');
+            tab.classList.add('bg-gray-200', 'text-gray-700');
+            if (tabFilter === 'crypto') {
+                tab.classList.add('hover:bg-purple-100');
+            } else if (tabFilter === 'bank') {
+                tab.classList.add('hover:bg-emerald-100');
+            }
+        }
+    });
+    
+    // Filter cards with smooth transition
+    cards.forEach(card => {
+        const cardType = card.getAttribute('data-payment-type');
+        
+        if (type === 'all' || cardType === type) {
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.9)';
+            card.style.display = '';
+            
+            setTimeout(() => {
+                card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'scale(1)';
+            }, 10);
+        } else {
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.9)';
+            
+            setTimeout(() => {
+                card.style.display = 'none';
+            }, 300);
+        }
+    });
+}
+
+// Export new filter functions
+window.filterPaymentMethods = filterPaymentMethods;
+window.filterFeaturedMethods = filterFeaturedMethods;

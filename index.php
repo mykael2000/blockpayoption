@@ -16,9 +16,14 @@ try {
     $stmt->execute();
     $platforms_count = $stmt->fetch()['count'];
     
+    // Get 3 crypto methods and 2 bank methods for featured section
     $stmt = $pdo->prepare("SELECT * FROM payment_methods WHERE is_active = 1 ORDER BY display_order LIMIT 3");
     $stmt->execute();
-    $featured_methods = $stmt->fetchAll();
+    $featured_crypto_methods = $stmt->fetchAll();
+    
+    $stmt = $pdo->prepare("SELECT * FROM bank_payment_methods WHERE is_active = 1 ORDER BY display_order LIMIT 2");
+    $stmt->execute();
+    $featured_bank_methods = $stmt->fetchAll();
 } catch (PDOException $e) {
     $error = "Database error occurred";
 }
@@ -274,17 +279,31 @@ try {
     <!-- Featured Payment Methods -->
     <section class="py-20 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16 animate-on-scroll">
-                <h2 class="text-4xl font-bold mb-4 gradient-text">Popular Payment Methods</h2>
+            <div class="text-center mb-12 animate-on-scroll">
+                <h2 class="text-4xl font-bold mb-4 gradient-text">Popular Payment Options</h2>
                 <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                    Start accepting these cryptocurrencies today
+                    Start accepting cryptocurrencies and bank transfers today
                 </p>
             </div>
+            
+            <!-- Filter Tabs -->
+            <div class="flex justify-center space-x-4 mb-12 flex-wrap gap-2">
+                <button onclick="filterFeaturedMethods('all')" data-featured-filter="all" class="featured-filter-tab px-6 py-2 rounded-full font-semibold transition bg-gray-600 text-white">
+                    All
+                </button>
+                <button onclick="filterFeaturedMethods('crypto')" data-featured-filter="crypto" class="featured-filter-tab px-6 py-2 rounded-full font-semibold transition bg-gray-200 text-gray-700 hover:bg-purple-100">
+                    Crypto
+                </button>
+                <button onclick="filterFeaturedMethods('bank')" data-featured-filter="bank" class="featured-filter-tab px-6 py-2 rounded-full font-semibold transition bg-gray-200 text-gray-700 hover:bg-emerald-100">
+                    Bank
+                </button>
+            </div>
 
-            <?php if (!empty($featured_methods)): ?>
-            <div class="grid md:grid-cols-3 gap-8 mb-12">
-                <?php foreach ($featured_methods as $index => $method): ?>
-                <div class="bg-white border-2 border-gray-200 rounded-2xl p-8 hover:border-purple-400 hover:shadow-xl card-hover animate-on-scroll" style="animation-delay: <?php echo $index * 0.2; ?>s">
+            <?php if (!empty($featured_crypto_methods) || !empty($featured_bank_methods)): ?>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                <!-- Crypto Methods -->
+                <?php foreach ($featured_crypto_methods as $index => $method): ?>
+                <div class="featured-payment-card bg-white border-2 border-gray-200 rounded-2xl p-8 hover:border-purple-400 hover:shadow-xl card-hover animate-on-scroll" data-payment-type="crypto" style="animation-delay: <?php echo $index * 0.2; ?>s">
                     <div class="flex items-center justify-between mb-6">
                         <?php if ($method['logo_path']): ?>
                         <img src="<?php echo e($method['logo_path']); ?>" alt="<?php echo e($method['name']); ?>" class="w-16 h-16 object-contain">
@@ -293,8 +312,8 @@ try {
                             <?php echo e(substr($method['symbol'], 0, 1)); ?>
                         </div>
                         <?php endif; ?>
-                        <span class="px-4 py-2 gradient-blue-teal text-white rounded-full font-bold text-sm">
-                            <?php echo e($method['symbol']); ?>
+                        <span class="px-3 py-1 gradient-purple-blue text-white rounded-full font-bold text-xs">
+                            Crypto
                         </span>
                     </div>
                     <h3 class="text-2xl font-bold mb-4 text-gray-900"><?php echo e($method['name']); ?></h3>
@@ -311,7 +330,39 @@ try {
                         <?php endforeach; ?>
                     </div>
                     <?php endif; ?>
-                    <a href="payment-methods.php" class="block text-center px-6 py-3 gradient-purple-blue text-white rounded-lg font-semibold hover:shadow-lg transition">
+                    <a href="payment-methods.php?id=<?php echo e($method['id']); ?>" class="block text-center px-6 py-3 gradient-purple-blue text-white rounded-lg font-semibold hover:shadow-lg transition">
+                        View Details
+                    </a>
+                </div>
+                <?php endforeach; ?>
+                
+                <!-- Bank Methods -->
+                <?php foreach ($featured_bank_methods as $index => $bank): ?>
+                <div class="featured-payment-card bg-white border-2 border-gray-200 rounded-2xl p-8 hover:border-emerald-400 hover:shadow-xl card-hover animate-on-scroll" data-payment-type="bank" style="animation-delay: <?php echo ($index + count($featured_crypto_methods)) * 0.2; ?>s">
+                    <div class="flex items-center justify-between mb-6">
+                        <?php if ($bank['logo_path']): ?>
+                        <img src="<?php echo e($bank['logo_path']); ?>" alt="<?php echo e($bank['bank_name']); ?>" class="w-16 h-16 object-contain">
+                        <?php else: ?>
+                        <div class="w-16 h-16 gradient-emerald-green rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                            🏦
+                        </div>
+                        <?php endif; ?>
+                        <span class="px-3 py-1 gradient-emerald-green text-white rounded-full font-bold text-xs">
+                            Bank Transfer
+                        </span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-900"><?php echo e($bank['bank_name']); ?></h3>
+                    <div class="space-y-2 mb-6">
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="font-semibold mr-2">Type:</span>
+                            <span><?php echo e(ucfirst($bank['account_type'])); ?></span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="font-semibold mr-2">Currency:</span>
+                            <span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded font-bold"><?php echo e($bank['currency']); ?></span>
+                        </div>
+                    </div>
+                    <a href="payment-methods.php" class="block text-center px-6 py-3 gradient-emerald-green text-white rounded-lg font-semibold hover:shadow-lg transition">
                         View Details
                     </a>
                 </div>
