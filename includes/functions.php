@@ -299,8 +299,8 @@ function formatBankDetails($bankMethod) {
         $details['Account Type'] = ucfirst($bankMethod['account_type']);
     }
     
-    if (!empty($bankMethod['currency'])) {
-        $details['Currency'] = $bankMethod['currency'];
+    if (!empty($bankMethod['bank_currency'])) {
+        $details['Currency'] = $bankMethod['bank_currency'];
     }
     
     if (!empty($bankMethod['country'])) {
