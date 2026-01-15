@@ -96,38 +96,108 @@ function is_valid_email($email) {
  * Upload file
  */
 function upload_file($file, $allowed_types = null, $max_size = null) {
-    if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
-        return ['success' => false, 'error' => 'No file uploaded or upload error occurred'];
+    // Check if file was uploaded
+    if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+        return ['success' => false, 'error' => 'No file was uploaded or upload failed.'];
+    }
+    
+    // Check for upload errors
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        $error_messages = [
+            UPLOAD_ERR_INI_SIZE => 'File exceeds the maximum upload size configured on the server.',
+            UPLOAD_ERR_FORM_SIZE => 'File exceeds the maximum upload size allowed.',
+            UPLOAD_ERR_PARTIAL => 'File was only partially uploaded. Please try again.',
+            UPLOAD_ERR_NO_FILE => 'No file was uploaded.',
+            UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder on server.',
+            UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk.',
+            UPLOAD_ERR_EXTENSION => 'Upload blocked by server extension.'
+        ];
+        
+        $error = $error_messages[$file['error']] ?? 'Unknown upload error occurred.';
+        return ['success' => false, 'error' => $error];
     }
     
     $allowed_types = $allowed_types ?? ALLOWED_IMAGE_TYPES;
     $max_size = $max_size ?? MAX_FILE_SIZE;
     
-    // Validate file type
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mime_type = finfo_file($finfo, $file['tmp_name']);
-    finfo_close($finfo);
-    
-    if (!in_array($mime_type, $allowed_types)) {
-        return ['success' => false, 'error' => 'Invalid file type'];
+    // Check file size
+    if ($file['size'] > $max_size) {
+        return ['success' => false, 'error' => 'File size exceeds maximum allowed size of ' . ($max_size / 1024 / 1024) . 'MB.'];
     }
     
-    // Validate file size
-    if ($file['size'] > $max_size) {
-        return ['success' => false, 'error' => 'File size exceeds maximum allowed size'];
+    // Get file extension
+    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    
+    // Validate extension
+    if (!in_array($extension, ALLOWED_EXTENSIONS)) {
+        return ['success' => false, 'error' => 'Invalid file extension. Allowed: ' . implode(', ', ALLOWED_EXTENSIONS)];
+    }
+    
+    // Try multiple methods to get MIME type
+    $mime_type = false;
+    
+    // Method 1: Try mime_content_type (available in most PHP installations)
+    if (function_exists('mime_content_type')) {
+        $mime_type = @mime_content_type($file['tmp_name']);
+    }
+    
+    // Method 2: Try finfo if available
+    if (!$mime_type && function_exists('finfo_open')) {
+        $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+        if ($finfo) {
+            $mime_type = @finfo_file($finfo, $file['tmp_name']);
+            @finfo_close($finfo);
+        }
+    }
+    
+    // Method 3: Fallback to extension-based validation
+    if (!$mime_type) {
+        $extension_mime_map = [
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            'svg' => 'image/svg+xml',
+            'bmp' => 'image/bmp',
+            'ico' => 'image/x-icon'
+        ];
+        
+        if (isset($extension_mime_map[$extension])) {
+            $mime_type = $extension_mime_map[$extension];
+        }
+    }
+    
+    // If still no MIME type detected, reject
+    if (!$mime_type) {
+        return ['success' => false, 'error' => 'Unable to determine file type. Please upload a valid image file.'];
+    }
+    
+    // Validate MIME type
+    if (!in_array($mime_type, $allowed_types)) {
+        return ['success' => false, 'error' => 'Invalid file type. Allowed: JPG, PNG, GIF, WEBP, SVG, BMP, ICO.'];
     }
     
     // Generate unique filename
-    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
     $filename = uniqid() . '_' . time() . '.' . $extension;
-    $destination = UPLOAD_DIR . $filename;
+    $filepath = UPLOAD_DIR . $filename;
     
-    // Move uploaded file
-    if (move_uploaded_file($file['tmp_name'], $destination)) {
-        return ['success' => true, 'filename' => $filename, 'path' => 'uploads/' . $filename];
+    // Create upload directory if it doesn't exist
+    if (!is_dir(UPLOAD_DIR)) {
+        if (!mkdir(UPLOAD_DIR, 0755, true)) {
+            return ['success' => false, 'error' => 'Failed to create upload directory.'];
+        }
     }
     
-    return ['success' => false, 'error' => 'Failed to move uploaded file'];
+    // Move uploaded file
+    if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+        return ['success' => false, 'error' => 'Failed to save uploaded file.'];
+    }
+    
+    // Set proper permissions
+    chmod($filepath, 0644);
+    
+    return ['success' => true, 'filename' => $filename, 'path' => 'uploads/' . $filename];
 }
 
 /**

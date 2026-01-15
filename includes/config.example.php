@@ -61,10 +61,17 @@ define('ALLOWED_EXTENSIONS', ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
 define('ALLOWED_IMAGE_TYPES', [
     'image/jpeg',
     'image/jpg',
+    'image/pjpeg', // Progressive JPEG
     'image/png',
+    'image/x-png',
     'image/gif',
     'image/webp',
-    'image/svg+xml'
+    'image/svg+xml',
+    'image/svg',
+    'image/bmp',
+    'image/x-ms-bmp',
+    'image/x-icon',
+    'image/vnd.microsoft.icon'
 ]);
 
 // Timezone
