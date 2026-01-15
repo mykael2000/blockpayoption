@@ -200,9 +200,20 @@ $page_title = 'Payment Links';
             <!-- Stats Cards -->
             <?php if (!empty($payment_links)): 
                 $total_links = count($payment_links);
-                $pending_count = count(array_filter($payment_links, fn($l) => $l['status'] === 'pending'));
-                $completed_count = count(array_filter($payment_links, fn($l) => $l['status'] === 'completed'));
-                $expired_count = count(array_filter($payment_links, fn($l) => $l['status'] === 'expired'));
+                
+                // Calculate status counts
+                $pending_count = 0;
+                $completed_count = 0;
+                $expired_count = 0;
+                foreach ($payment_links as $l) {
+                    if ($l['status'] === 'pending') {
+                        $pending_count++;
+                    } elseif ($l['status'] === 'completed') {
+                        $completed_count++;
+                    } elseif ($l['status'] === 'expired') {
+                        $expired_count++;
+                    }
+                }
             ?>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
                 <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">

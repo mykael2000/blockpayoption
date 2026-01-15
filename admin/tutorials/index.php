@@ -161,8 +161,16 @@ $page_title = 'Tutorials';
                 <!-- Summary -->
                 <div class="mt-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4 border border-purple-200">
                     <?php
-                    $published_count = count(array_filter($tutorials, fn($t) => $t['is_published']));
-                    $draft_count = count(array_filter($tutorials, fn($t) => !$t['is_published']));
+                    // Calculate counts
+                    $published_count = 0;
+                    $draft_count = 0;
+                    foreach ($tutorials as $t) {
+                        if ($t['is_published']) {
+                            $published_count++;
+                        } else {
+                            $draft_count++;
+                        }
+                    }
                     ?>
                     <p class="text-sm text-gray-700">
                         <span class="font-semibold"><?= count($tutorials) ?></span> tutorial<?= count($tutorials) !== 1 ? 's' : '' ?> total
