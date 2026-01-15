@@ -304,6 +304,7 @@ function getStatusIcon($status) {
                                 <h4 class="text-sm font-bold text-blue-800 mb-1">Processing Time</h4>
                                 <p class="text-sm text-blue-700">
                                     <?php 
+                                    // Check payment currency (not bank currency) to determine if it's a domestic transfer
                                     if ($payment_link['country'] === 'United States' || $payment_link['currency'] === 'USD') {
                                         echo 'Domestic transfers typically take 1-3 business days to process.';
                                     } else {
