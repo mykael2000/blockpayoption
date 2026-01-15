@@ -153,7 +153,7 @@ $page_title = 'Create Payment Link';
         <main class="flex-1 p-8">
             <!-- Header -->
             <div class="mb-8">
-                <a href="/admin/payment-links/index.php" class="text-purple-600 hover:text-purple-700 font-medium mb-4 inline-block">
+                <a href="<?= BASE_URL ?>/admin/payment-links/index.php" class="text-purple-600 hover:text-purple-700 font-medium mb-4 inline-block">
                     ← Back to Payment Links
                 </a>
                 <h1 class="text-3xl font-bold text-gray-800">Create Payment Link</h1>
@@ -332,7 +332,7 @@ $page_title = 'Create Payment Link';
 
                         <!-- Action Buttons -->
                         <div class="flex items-center justify-end space-x-4">
-                            <a href="/admin/payment-links/index.php" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium">
+                            <a href="<?= BASE_URL ?>/admin/payment-links/index.php" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium">
                                 Cancel
                             </a>
                             <button 

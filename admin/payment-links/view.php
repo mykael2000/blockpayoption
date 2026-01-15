@@ -110,7 +110,7 @@ $page_title = 'Payment Link Details';
                 $is_bank = $payment_type === 'bank';
                 $back_link_color = $is_bank ? 'emerald' : 'purple';
                 ?>
-                <a href="/admin/payment-links/index.php" class="text-<?= $back_link_color ?>-600 hover:text-<?= $back_link_color ?>-700 font-medium mb-4 inline-block">
+                <a href="<?= BASE_URL ?>/admin/payment-links/index.php" class="text-<?= $back_link_color ?>-600 hover:text-<?= $back_link_color ?>-700 font-medium mb-4 inline-block">
                     ← Back to Payment Links
                 </a>
                 <div class="flex items-center justify-between">
@@ -389,7 +389,7 @@ $page_title = 'Payment Link Details';
                             </button>
                             
                             <a 
-                                href="/admin/payment-links/create.php"
+                                href="<?= BASE_URL ?>/admin/payment-links/create.php"
                                 class="block w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-center font-medium"
                             >
                                 ➕ Create New Link
