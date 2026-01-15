@@ -262,7 +262,7 @@ function validateIBAN($iban) {
     }
     
     // Check if mod 97 equals 1
-    return bcmod($numericString, '97') == '1';
+    return bcmod($numericString, '97') === '1';
 }
 
 /**
