@@ -23,7 +23,8 @@ function is_logged_in() {
 function require_auth() {
     if (!is_logged_in()) {
         $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
-        header('Location: /admin/login.php');
+        $login_url = BASE_URL . '/admin/login.php';
+        header('Location: ' . $login_url);
         exit;
     }
 }

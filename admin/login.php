@@ -133,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         <!-- Back to Site -->
         <div class="mt-6 text-center">
-            <a href="/" class="text-white hover:text-purple-200 transition text-sm">
+            <a href="<?= BASE_URL ?>/" class="text-white hover:text-purple-200 transition text-sm">
                 ← Back to Website
             </a>
         </div>

@@ -77,7 +77,7 @@ $page_title = 'Payment Links';
                     <h1 class="text-3xl font-bold text-gray-800">Payment Links</h1>
                     <p class="text-gray-600 mt-1">Create and manage cryptocurrency payment links</p>
                 </div>
-                <a href="/admin/payment-links/create.php" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition font-medium">
+                <a href="<?= BASE_URL ?>/admin/payment-links/create.php" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition font-medium">
                     + Create Payment Link
                 </a>
             </div>
@@ -96,7 +96,7 @@ $page_title = 'Payment Links';
                         <div class="text-6xl mb-4">🔗</div>
                         <h3 class="text-xl font-semibold text-gray-800 mb-2">No Payment Links Yet</h3>
                         <p class="text-gray-600 mb-6">Create your first payment link to start accepting cryptocurrency payments.</p>
-                        <a href="/admin/payment-links/create.php" class="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition font-medium">
+                        <a href="<?= BASE_URL ?>/admin/payment-links/create.php" class="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition font-medium">
                             Create Your First Link
                         </a>
                     </div>
@@ -176,7 +176,7 @@ $page_title = 'Payment Links';
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                                             <div class="flex items-center space-x-3">
-                                                <a href="/admin/payment-links/view.php?id=<?= $link['id'] ?>" class="text-blue-600 hover:text-blue-800 font-medium transition">
+                                                <a href="<?= BASE_URL ?>/admin/payment-links/view.php?id=<?= $link['id'] ?>" class="text-blue-600 hover:text-blue-800 font-medium transition">
                                                     View
                                                 </a>
                                                 <form method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this payment link?');">

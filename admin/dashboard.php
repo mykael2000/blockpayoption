@@ -189,7 +189,7 @@ $page_title = 'Dashboard';
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="text-xl font-bold text-gray-800">Recent Payment Links</h2>
-                    <a href="/admin/payment-links/index.php" class="text-blue-600 hover:text-blue-700 text-sm font-medium">View All →</a>
+                    <a href="<?= BASE_URL ?>/admin/payment-links/index.php" class="text-blue-600 hover:text-blue-700 text-sm font-medium">View All →</a>
                 </div>
                 
                 <?php if (empty($recent_payment_links)): ?>
