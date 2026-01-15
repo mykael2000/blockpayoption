@@ -24,6 +24,12 @@ function is_active($page, $dir = '') {
             <span class="font-medium">Payment Methods</span>
         </a>
         
+        <!-- Bank Payment Methods -->
+        <a href="/admin/bank-payment-methods/index.php" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition <?= is_active('', 'bank-payment-methods') ?>">
+            <span class="text-xl">🏦</span>
+            <span class="font-medium">Bank Payment Methods</span>
+        </a>
+        
         <!-- Tutorials -->
         <a href="/admin/tutorials/index.php" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition <?= is_active('', 'tutorials') ?>">
             <span class="text-xl">📚</span>

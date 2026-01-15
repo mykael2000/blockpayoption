@@ -19,6 +19,12 @@ try {
     $stmt = $pdo->query("SELECT COUNT(*) as count FROM payment_methods");
     $total_payment_methods = $stmt->fetch()['count'];
     
+    $stmt = $pdo->query("SELECT COUNT(*) as count FROM bank_payment_methods WHERE is_active = 1");
+    $active_bank_methods = $stmt->fetch()['count'];
+    
+    $stmt = $pdo->query("SELECT COUNT(*) as count FROM bank_payment_methods");
+    $total_bank_methods = $stmt->fetch()['count'];
+    
     $stmt = $pdo->query("SELECT COUNT(*) as count FROM tutorials WHERE is_published = 1");
     $published_tutorials = $stmt->fetch()['count'];
     
@@ -31,11 +37,22 @@ try {
     $stmt = $pdo->query("SELECT COUNT(*) as count FROM payment_links WHERE status = 'pending'");
     $pending_payment_links = $stmt->fetch()['count'];
     
+    $stmt = $pdo->query("SELECT COUNT(*) as count FROM payment_links WHERE payment_type = 'crypto'");
+    $crypto_payment_links = $stmt->fetch()['count'];
+    
+    $stmt = $pdo->query("SELECT COUNT(*) as count FROM payment_links WHERE payment_type = 'bank'");
+    $bank_payment_links = $stmt->fetch()['count'];
+    
     // Recent payment links
     $stmt = $pdo->query("
-        SELECT pl.*, pm.name as payment_method_name, pm.symbol 
+        SELECT pl.*, 
+               pm.name as payment_method_name, 
+               pm.symbol,
+               bpm.bank_name,
+               pl.payment_type
         FROM payment_links pl 
         LEFT JOIN payment_methods pm ON pl.payment_method_id = pm.id 
+        LEFT JOIN bank_payment_methods bpm ON pl.bank_payment_method_id = bpm.id
         ORDER BY pl.created_at DESC 
         LIMIT 5
     ");
@@ -81,27 +98,39 @@ $page_title = 'Dashboard';
             
             <!-- Statistics Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <!-- Payment Methods -->
-                <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition duration-300">
+                <!-- Crypto Payment Methods -->
+                <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition duration-300">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-blue-100 text-sm mb-1">Payment Methods</p>
+                            <p class="text-purple-100 text-sm mb-1">Crypto Methods</p>
                             <p class="text-3xl font-bold"><?= $total_payment_methods ?></p>
-                            <p class="text-blue-100 text-xs mt-1"><?= $active_payment_methods ?> active</p>
+                            <p class="text-purple-100 text-xs mt-1"><?= $active_payment_methods ?> active</p>
                         </div>
-                        <div class="text-blue-200 text-5xl opacity-50">💳</div>
+                        <div class="text-purple-200 text-5xl opacity-50">💳</div>
+                    </div>
+                </div>
+                
+                <!-- Bank Payment Methods -->
+                <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition duration-300">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-green-100 text-sm mb-1">Bank Methods</p>
+                            <p class="text-3xl font-bold"><?= $total_bank_methods ?></p>
+                            <p class="text-green-100 text-xs mt-1"><?= $active_bank_methods ?> active</p>
+                        </div>
+                        <div class="text-green-200 text-5xl opacity-50">🏦</div>
                     </div>
                 </div>
                 
                 <!-- Tutorials -->
-                <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition duration-300">
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition duration-300">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-purple-100 text-sm mb-1">Tutorials</p>
+                            <p class="text-blue-100 text-sm mb-1">Tutorials</p>
                             <p class="text-3xl font-bold"><?= $published_tutorials ?></p>
-                            <p class="text-purple-100 text-xs mt-1">Published</p>
+                            <p class="text-blue-100 text-xs mt-1">Published</p>
                         </div>
-                        <div class="text-purple-200 text-5xl opacity-50">📚</div>
+                        <div class="text-blue-200 text-5xl opacity-50">📚</div>
                     </div>
                 </div>
                 
@@ -123,7 +152,7 @@ $page_title = 'Dashboard';
                         <div>
                             <p class="text-amber-100 text-sm mb-1">Payment Links</p>
                             <p class="text-3xl font-bold"><?= $total_payment_links ?></p>
-                            <p class="text-amber-100 text-xs mt-1"><?= $pending_payment_links ?> pending</p>
+                            <p class="text-amber-100 text-xs mt-1"><?= $crypto_payment_links ?> crypto, <?= $bank_payment_links ?> bank</p>
                         </div>
                         <div class="text-amber-200 text-5xl opacity-50">🔗</div>
                     </div>
@@ -145,6 +174,7 @@ $page_title = 'Dashboard';
                             <thead>
                                 <tr class="border-b">
                                     <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Unique ID</th>
+                                    <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Type</th>
                                     <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Payment Method</th>
                                     <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Amount</th>
                                     <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Status</th>
@@ -158,8 +188,23 @@ $page_title = 'Dashboard';
                                             <code class="bg-gray-100 px-2 py-1 rounded text-xs"><?= e($link['unique_id']) ?></code>
                                         </td>
                                         <td class="py-3 px-4 text-sm">
-                                            <span class="font-medium"><?= e($link['payment_method_name']) ?></span>
-                                            <span class="text-gray-500">(<?= e($link['symbol']) ?>)</span>
+                                            <?php if ($link['payment_type'] === 'bank'): ?>
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                                    🏦 Bank
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
+                                                    💳 Crypto
+                                                </span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="py-3 px-4 text-sm">
+                                            <?php if ($link['payment_type'] === 'bank'): ?>
+                                                <span class="font-medium"><?= e($link['bank_name']) ?></span>
+                                            <?php else: ?>
+                                                <span class="font-medium"><?= e($link['payment_method_name']) ?></span>
+                                                <span class="text-gray-500">(<?= e($link['symbol']) ?>)</span>
+                                            <?php endif; ?>
                                         </td>
                                         <td class="py-3 px-4 text-sm font-medium">
                                             <?= e($link['amount']) ?> <?= e($link['currency']) ?>
