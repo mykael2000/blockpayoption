@@ -31,15 +31,9 @@ try {
             $stmt = $pdo->prepare("SELECT *, 'bank' as payment_type FROM bank_payment_methods WHERE is_active = 1 AND (bank_name LIKE ? OR account_holder_name LIKE ? OR currency LIKE ? OR country LIKE ?) ORDER BY display_order");
             $search_term = "%{$search}%";
             $stmt->execute([$search_term, $search_term, $search_term, $search_term]);
+            $bank_methods = $stmt->fetchAll();
         } else {
             $bank_methods = getBankPaymentMethods();
-            // Add payment_type field
-            foreach ($bank_methods as &$method) {
-                $method['payment_type'] = 'bank';
-            }
-        }
-        if ($search && $stmt) {
-            $bank_methods = $stmt->fetchAll();
         }
     }
     

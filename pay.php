@@ -74,13 +74,15 @@ function getStatusIcon($status) {
         default => '⏳'
     };
 }
+
+$is_bank = $payment_link && $payment_link['payment_type'] === 'bank';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Complete your cryptocurrency payment securely with BlockPayOption.">
+    <meta name="description" content="Complete your <?php echo $is_bank ? 'bank transfer' : 'cryptocurrency'; ?> payment securely with BlockPayOption.">
     <meta name="robots" content="noindex, nofollow">
     <title>Payment - <?php echo e(SITE_NAME); ?></title>
     <script src="https://cdn.tailwindcss.com"></script>

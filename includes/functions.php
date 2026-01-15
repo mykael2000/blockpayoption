@@ -206,7 +206,7 @@ function validate_required($fields, $data) {
 function getBankPaymentMethods($active_only = true) {
     global $pdo;
     try {
-        $sql = "SELECT * FROM bank_payment_methods";
+        $sql = "SELECT *, 'bank' as payment_type FROM bank_payment_methods";
         if ($active_only) {
             $sql .= " WHERE is_active = 1";
         }
@@ -239,6 +239,11 @@ function getBankPaymentMethodById($id) {
  * Mask account number (show last 4 digits)
  */
 function maskAccountNumber($accountNumber, $visibleDigits = 4) {
+    // Validate and sanitize input
+    if (!is_string($accountNumber) && !is_numeric($accountNumber)) {
+        return '';
+    }
+    $accountNumber = (string)$accountNumber;
     if (empty($accountNumber)) {
         return '';
     }
