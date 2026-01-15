@@ -1,0 +1,1 @@
+# BlockPayOption - Crypto Payment Platform\n\nA modern crypto payment website built with PHP and Tailwind CSS.
