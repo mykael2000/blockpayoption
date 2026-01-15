@@ -55,16 +55,23 @@ define('DB_CHARSET', 'utf8mb4');
 define('UPLOAD_DIR', BASE_PATH . '/uploads/');
 define('UPLOAD_URL', BASE_URL . '/uploads/');
 define('MAX_FILE_SIZE', 5242880); // 5MB in bytes
-define('ALLOWED_EXTENSIONS', ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
+define('ALLOWED_EXTENSIONS', ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico']);
 
 // Allowed image MIME types for upload validation
 define('ALLOWED_IMAGE_TYPES', [
     'image/jpeg',
     'image/jpg',
+    'image/pjpeg', // Progressive JPEG
     'image/png',
+    'image/x-png',
     'image/gif',
     'image/webp',
-    'image/svg+xml'
+    'image/svg+xml',
+    'image/svg',
+    'image/bmp',
+    'image/x-ms-bmp',
+    'image/x-icon',
+    'image/vnd.microsoft.icon'
 ]);
 
 // Timezone
