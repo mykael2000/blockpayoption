@@ -122,7 +122,7 @@ function upload_file($file, $allowed_types = null, $max_size = null) {
     
     // Check file size
     if ($file['size'] > $max_size) {
-        return ['success' => false, 'error' => 'File size exceeds maximum allowed size of ' . ($max_size / 1024 / 1024) . 'MB.'];
+        return ['success' => false, 'error' => 'File size exceeds maximum allowed size of ' . round($max_size / 1024 / 1024, 1) . 'MB.'];
     }
     
     // Get file extension
@@ -175,7 +175,7 @@ function upload_file($file, $allowed_types = null, $max_size = null) {
     
     // Validate MIME type
     if (!in_array($mime_type, $allowed_types)) {
-        return ['success' => false, 'error' => 'Invalid file type. Allowed: JPG, PNG, GIF, WEBP, SVG, BMP, ICO.'];
+        return ['success' => false, 'error' => 'Invalid file type. Allowed: ' . strtoupper(implode(', ', ALLOWED_EXTENSIONS)) . '.'];
     }
     
     // Generate unique filename
