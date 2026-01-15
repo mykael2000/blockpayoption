@@ -182,21 +182,33 @@ $page_title = 'Payment Methods';
                     </div>
                 </div>
                 
-                <!-- Statistics Footer -->
-                <div class="mt-6 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg p-4 border border-purple-200">
+                <?php
+                // Calculate counts before HTML
+                $active_count = 0;
+                $inactive_count = 0;
+                foreach ($bank_methods as $method) {
+                    if ($method['is_active']) {
+                        $active_count++;
+                    } else {
+                        $inactive_count++;
+                    }
+                }
+                ?>
+
+                <div class="mt-6 bg-gradient-to-r from-emerald-100 to-green-100 rounded-lg p-4 border border-emerald-200">
                     <div class="flex items-center justify-between text-sm">
                         <div class="flex items-center space-x-6">
                             <div>
                                 <span class="text-gray-600">Total Methods:</span>
-                                <span class="font-bold text-gray-800 ml-2"><?= count($payment_methods) ?></span>
+                                <span class="font-bold text-gray-800 ml-2"><? = count($bank_methods) ?></span>
                             </div>
                             <div>
                                 <span class="text-gray-600">Active:</span>
-                                <span class="font-bold text-green-600 ml-2"><?= count(array_filter($payment_methods, fn($m) => $m['is_active'])) ?></span>
+                                <span class="font-bold text-green-600 ml-2"><?= $active_count ?></span>
                             </div>
                             <div>
                                 <span class="text-gray-600">Inactive:</span>
-                                <span class="font-bold text-gray-500 ml-2"><?= count(array_filter($payment_methods, fn($m) => !$m['is_active'])) ?></span>
+                                <span class="font-bold text-gray-500 ml-2"><?= $inactive_count ?></span>
                             </div>
                         </div>
                     </div>
