@@ -182,17 +182,17 @@ $page_title = 'Payment Methods';
                     </div>
                 </div>
                 
-                <!-- <?php
+                <?php
                 
-                // $active_count = 0;
-                // $inactive_count = 0;
-                // foreach ($bank_methods as $method) {
-                //     if ($method['is_active']) {
-                //         $active_count++;
-                //     } else {
-                //         $inactive_count++;
-                //     }
-                // }
+                $active_count = 0;
+                $inactive_count = 0;
+                foreach ($bank_methods as $method) {
+                    if ($method['is_active']) {
+                        $active_count++;
+                    } else {
+                        $inactive_count++;
+                    }
+                }
                 ?>
 
                 <div class="mt-6 bg-gradient-to-r from-emerald-100 to-green-100 rounded-lg p-4 border border-emerald-200">
@@ -200,7 +200,7 @@ $page_title = 'Payment Methods';
                         <div class="flex items-center space-x-6">
                             <div>
                                 <span class="text-gray-600">Total Methods:</span>
-                                <span class="font-bold text-gray-800 ml-2"><? = count($bank_methods) ?></span>
+                                <span class="font-bold text-gray-800 ml-2"><?= count($bank_methods) ?></span>
                             </div>
                             <div>
                                 <span class="text-gray-600">Active:</span>
@@ -212,7 +212,7 @@ $page_title = 'Payment Methods';
                             </div>
                         </div>
                     </div>
-                </div> -->
+                </div>
             <?php endif; ?>
         </main>
     </div>
