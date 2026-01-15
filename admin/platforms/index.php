@@ -165,7 +165,7 @@ $page_title = 'Platforms';
                 <!-- Summary -->
                 <div class="mt-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4 border border-purple-200">
                     <?php
-                    // Calculate counts and average rating
+                    // Calculate counts
                     $active_count = 0;
                     $inactive_count = 0;
                     foreach ($platforms as $p) {
@@ -175,6 +175,7 @@ $page_title = 'Platforms';
                             $inactive_count++;
                         }
                     }
+                    // Calculate average rating
                     $avg_rating = count($platforms) > 0 ? array_sum(array_column($platforms, 'rating')) / count($platforms) : 0;
                     ?>
                     <p class="text-sm text-gray-700">
