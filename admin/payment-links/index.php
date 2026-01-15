@@ -34,9 +34,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // Get all payment links with payment method details
 try {
     $stmt = $pdo->query("
-        SELECT pl.*, pm.name as payment_method_name, pm.symbol as payment_method_symbol
+        SELECT pl.*, 
+               pm.name as payment_method_name, 
+               pm.symbol as payment_method_symbol,
+               bpm.bank_name,
+               bpm.account_number
         FROM payment_links pl
         LEFT JOIN payment_methods pm ON pl.payment_method_id = pm.id
+        LEFT JOIN bank_payment_methods bpm ON pl.bank_payment_method_id = bpm.id
         ORDER BY pl.created_at DESC
     ");
     $payment_links = $stmt->fetchAll();
@@ -101,6 +106,7 @@ $page_title = 'Payment Links';
                             <thead class="bg-gradient-to-r from-purple-50 to-blue-50 border-b border-gray-200">
                                 <tr>
                                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Link ID</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Payment Type</th>
                                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Payment Method</th>
                                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Amount</th>
                                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
@@ -117,12 +123,25 @@ $page_title = 'Payment Links';
                                             <code class="px-2 py-1 bg-gray-100 text-purple-700 rounded text-sm font-mono"><?= e($link['unique_id']) ?></code>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
+                                            <?php 
+                                            $payment_type = $link['payment_type'] ?? 'crypto';
+                                            $type_badge_class = $payment_type === 'bank' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-purple-100 text-purple-800 border-purple-200';
+                                            ?>
+                                            <span class="px-3 py-1 rounded-full text-xs font-semibold border <?= $type_badge_class ?>">
+                                                <?= $payment_type === 'bank' ? '🏦 Bank' : '₿ Crypto' ?>
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
-                                                <span class="font-medium text-gray-900"><?= e($link['payment_method_name'] ?? 'N/A') ?></span>
+                                                <span class="font-medium text-gray-900">
+                                                    <?= e(($link['payment_type'] ?? 'crypto') === 'bank' ? ($link['bank_name'] ?? 'N/A') : ($link['payment_method_name'] ?? 'N/A')) ?>
+                                                </span>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="font-semibold text-gray-900"><?= e(rtrim(rtrim(number_format($link['amount'], 8, '.', ''), '0'), '.')) ?></span>
+                                            <span class="font-semibold text-gray-900">
+                                                <?= ($link['payment_type'] ?? 'crypto') === 'bank' ? e(number_format($link['amount'], 2, '.', ',')) : e(rtrim(rtrim(number_format($link['amount'], 8, '.', ''), '0'), '.')) ?>
+                                            </span>
                                             <span class="text-gray-600 ml-1"><?= e($link['currency']) ?></span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">

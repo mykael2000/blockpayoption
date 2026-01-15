@@ -7,6 +7,7 @@ $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $selected_method_id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 
 try {
+    // Fetch crypto payment methods
     if ($search) {
         $stmt = $pdo->prepare("SELECT * FROM payment_methods WHERE is_active = 1 AND (name LIKE ? OR symbol LIKE ? OR description LIKE ?) ORDER BY display_order");
         $search_term = "%{$search}%";
@@ -16,6 +17,17 @@ try {
         $stmt->execute();
     }
     $payment_methods = $stmt->fetchAll();
+    
+    // Fetch bank payment methods
+    if ($search) {
+        $stmt = $pdo->prepare("SELECT * FROM bank_payment_methods WHERE is_active = 1 AND (bank_name LIKE ? OR account_type LIKE ? OR currency LIKE ? OR country LIKE ?) ORDER BY display_order");
+        $search_term = "%{$search}%";
+        $stmt->execute([$search_term, $search_term, $search_term, $search_term]);
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM bank_payment_methods WHERE is_active = 1 ORDER BY display_order");
+        $stmt->execute();
+    }
+    $bank_methods = $stmt->fetchAll();
     
     $selected_method = null;
     if ($selected_method_id) {
@@ -32,8 +44,8 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Explore all available cryptocurrency payment methods. Accept Bitcoin, Ethereum, USDT and more on your platform.">
-    <meta name="keywords" content="cryptocurrency payment methods, bitcoin payments, ethereum, USDT, crypto payment options">
+    <meta name="description" content="Explore all available payment methods. Accept cryptocurrency and bank transfers on your platform.">
+    <meta name="keywords" content="cryptocurrency payment methods, bank transfers, bitcoin payments, ethereum, USDT, crypto payment options">
     <title>Payment Methods - <?php echo e(SITE_NAME); ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="assets/css/custom.css">
@@ -91,16 +103,16 @@ try {
             <div class="text-center fade-in">
                 <h1 class="text-5xl font-bold mb-4">Payment Methods</h1>
                 <p class="text-xl text-purple-100 max-w-3xl mx-auto">
-                    Choose from a wide range of cryptocurrencies to accept payments
+                    Choose from cryptocurrencies and traditional bank transfers to accept payments
                 </p>
             </div>
         </div>
     </section>
 
-    <!-- Search Bar -->
+    <!-- Search Bar & Filter Tabs -->
     <section class="py-8 bg-white shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <form method="GET" class="max-w-2xl mx-auto">
+            <form method="GET" class="max-w-2xl mx-auto mb-8">
                 <div class="relative">
                     <input 
                         type="text" 
@@ -119,13 +131,26 @@ try {
                 </div>
                 <?php endif; ?>
             </form>
+            
+            <!-- Filter Tabs -->
+            <div class="flex justify-center space-x-4 flex-wrap gap-2">
+                <button onclick="filterPaymentMethods('all')" data-filter="all" class="filter-tab px-6 py-2 rounded-full font-semibold transition bg-gray-600 text-white">
+                    All
+                </button>
+                <button onclick="filterPaymentMethods('crypto')" data-filter="crypto" class="filter-tab px-6 py-2 rounded-full font-semibold transition bg-gray-200 text-gray-700 hover:bg-purple-100">
+                    Cryptocurrency
+                </button>
+                <button onclick="filterPaymentMethods('bank')" data-filter="bank" class="filter-tab px-6 py-2 rounded-full font-semibold transition bg-gray-200 text-gray-700 hover:bg-emerald-100">
+                    Bank Transfer
+                </button>
+            </div>
         </div>
     </section>
 
     <!-- Payment Methods Grid -->
     <section class="py-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <?php if (empty($payment_methods)): ?>
+            <?php if (empty($payment_methods) && empty($bank_methods)): ?>
             <div class="text-center py-16">
                 <div class="text-6xl mb-4">🔍</div>
                 <h3 class="text-2xl font-bold text-gray-900 mb-4">No Payment Methods Found</h3>
@@ -144,8 +169,9 @@ try {
             </div>
             <?php else: ?>
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Crypto Payment Methods -->
                 <?php foreach ($payment_methods as $index => $method): ?>
-                <div class="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:border-purple-400 hover:shadow-xl card-hover animate-on-scroll" style="animation-delay: <?php echo ($index % 9) * 0.1; ?>s">
+                <div class="payment-method-card bg-white border-2 border-gray-200 rounded-2xl p-6 hover:border-purple-400 hover:shadow-xl card-hover animate-on-scroll" data-payment-type="crypto" data-filter="crypto" style="animation-delay: <?php echo ($index % 9) * 0.1; ?>s">
                     <div class="flex items-center justify-between mb-6">
                         <?php if ($method['logo_path']): ?>
                         <img src="<?php echo e($method['logo_path']); ?>" alt="<?php echo e($method['name']); ?>" class="w-16 h-16 object-contain">
@@ -154,8 +180,8 @@ try {
                             <?php echo e(substr($method['symbol'], 0, 1)); ?>
                         </div>
                         <?php endif; ?>
-                        <span class="px-4 py-2 gradient-blue-teal text-white rounded-full font-bold">
-                            <?php echo e($method['symbol']); ?>
+                        <span class="px-3 py-1 gradient-purple-blue text-white rounded-full font-bold text-xs">
+                            Crypto
                         </span>
                     </div>
                     
@@ -181,8 +207,56 @@ try {
                     <?php endif; ?>
                     
                     <button 
-                        onclick="showMethodDetails(<?php echo e($method['id']); ?>)"
+                        onclick="showCryptoDetails(<?php echo e($method['id']); ?>)"
                         class="w-full px-6 py-3 gradient-purple-blue text-white rounded-lg font-semibold hover:shadow-lg transition"
+                    >
+                        View Details
+                    </button>
+                </div>
+                <?php endforeach; ?>
+                
+                <!-- Bank Payment Methods -->
+                <?php foreach ($bank_methods as $index => $bank): ?>
+                <div class="payment-method-card bg-white border-2 border-gray-200 rounded-2xl p-6 hover:border-emerald-400 hover:shadow-xl card-hover animate-on-scroll" data-payment-type="bank" data-filter="bank" style="animation-delay: <?php echo (($index + count($payment_methods)) % 9) * 0.1; ?>s">
+                    <div class="flex items-center justify-between mb-6">
+                        <?php if ($bank['logo_path']): ?>
+                        <img src="<?php echo e($bank['logo_path']); ?>" alt="<?php echo e($bank['bank_name']); ?>" class="w-16 h-16 object-contain">
+                        <?php else: ?>
+                        <div class="w-16 h-16 gradient-emerald-green rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                            🏦
+                        </div>
+                        <?php endif; ?>
+                        <span class="px-3 py-1 gradient-emerald-green text-white rounded-full font-bold text-xs">
+                            Bank Transfer
+                        </span>
+                    </div>
+                    
+                    <h3 class="text-2xl font-bold mb-3 text-gray-900"><?php echo e($bank['bank_name']); ?></h3>
+                    
+                    <div class="space-y-2 mb-6">
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="font-semibold mr-2">Account:</span>
+                            <span class="font-mono"><?php echo e(maskAccountNumber($bank['account_number'])); ?></span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="font-semibold mr-2">Type:</span>
+                            <span><?php echo e(ucfirst($bank['account_type'])); ?></span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="font-semibold mr-2">Currency:</span>
+                            <span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded font-bold"><?php echo e($bank['currency']); ?></span>
+                        </div>
+                        <?php if ($bank['country']): ?>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="font-semibold mr-2">Country:</span>
+                            <span><?php echo e($bank['country']); ?></span>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <button 
+                        onclick="showBankDetails(<?php echo e($bank['id']); ?>)"
+                        class="w-full px-6 py-3 gradient-emerald-green text-white rounded-lg font-semibold hover:shadow-lg transition"
                     >
                         View Details
                     </button>
@@ -249,8 +323,9 @@ try {
     <script src="assets/js/main.js"></script>
     <script>
         const paymentMethods = <?php echo json_encode($payment_methods); ?>;
+        const bankMethods = <?php echo json_encode($bank_methods); ?>;
         
-        function showMethodDetails(methodId) {
+        function showCryptoDetails(methodId) {
             const method = paymentMethods.find(m => m.id == methodId);
             if (!method) return;
             
@@ -339,6 +414,150 @@ try {
                 });
             }, 100);
         }
+        
+        function showBankDetails(bankId) {
+            const bank = bankMethods.find(b => b.id == bankId);
+            if (!bank) return;
+            
+            const modalContent = `
+                <div class="p-8">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="flex items-center space-x-4">
+                            ${bank.logo_path ? 
+                                `<img src="${bank.logo_path}" alt="${bank.bank_name}" class="w-20 h-20 object-contain">` :
+                                `<div class="w-20 h-20 gradient-emerald-green rounded-full flex items-center justify-center text-white text-3xl font-bold">
+                                    🏦
+                                </div>`
+                            }
+                            <div>
+                                <h2 class="text-3xl font-bold text-emerald-700">${bank.bank_name}</h2>
+                                <span class="inline-block px-4 py-1 gradient-emerald-green text-white rounded-full font-bold text-sm mt-2">
+                                    Bank Transfer
+                                </span>
+                            </div>
+                        </div>
+                        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-emerald-50 to-green-50 p-6 rounded-xl mb-8">
+                        <h3 class="text-lg font-bold mb-4 text-gray-900">Account Details</h3>
+                        <div class="space-y-4">
+                            <div class="bg-white p-4 rounded-lg border-2 border-emerald-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-600">Account Holder</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <code class="text-sm font-mono text-gray-700">${bank.account_holder_name}</code>
+                                    <button onclick="copyToClipboard('${bank.account_holder_name}')" class="ml-4 flex-shrink-0 px-3 py-1 gradient-emerald-green text-white rounded-lg text-sm font-semibold hover:shadow-lg copy-btn transition">
+                                        Copy
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg border-2 border-emerald-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-600">Account Number</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <code class="text-sm font-mono text-gray-700">${bank.account_number}</code>
+                                    <button onclick="copyToClipboard('${bank.account_number}')" class="ml-4 flex-shrink-0 px-3 py-1 gradient-emerald-green text-white rounded-lg text-sm font-semibold hover:shadow-lg copy-btn transition">
+                                        Copy
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            ${bank.routing_number ? `
+                            <div class="bg-white p-4 rounded-lg border-2 border-emerald-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-600">Routing Number</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <code class="text-sm font-mono text-gray-700">${bank.routing_number}</code>
+                                    <button onclick="copyToClipboard('${bank.routing_number}')" class="ml-4 flex-shrink-0 px-3 py-1 gradient-emerald-green text-white rounded-lg text-sm font-semibold hover:shadow-lg copy-btn transition">
+                                        Copy
+                                    </button>
+                                </div>
+                            </div>
+                            ` : ''}
+                            
+                            ${bank.swift_code ? `
+                            <div class="bg-white p-4 rounded-lg border-2 border-emerald-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-600">SWIFT/BIC Code</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <code class="text-sm font-mono text-gray-700">${bank.swift_code}</code>
+                                    <button onclick="copyToClipboard('${bank.swift_code}')" class="ml-4 flex-shrink-0 px-3 py-1 gradient-emerald-green text-white rounded-lg text-sm font-semibold hover:shadow-lg copy-btn transition">
+                                        Copy
+                                    </button>
+                                </div>
+                            </div>
+                            ` : ''}
+                            
+                            ${bank.iban ? `
+                            <div class="bg-white p-4 rounded-lg border-2 border-emerald-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-600">IBAN</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <code class="text-sm font-mono text-gray-700">${bank.iban}</code>
+                                    <button onclick="copyToClipboard('${bank.iban}')" class="ml-4 flex-shrink-0 px-3 py-1 gradient-emerald-green text-white rounded-lg text-sm font-semibold hover:shadow-lg copy-btn transition">
+                                        Copy
+                                    </button>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4 mt-4">
+                            <div class="bg-white p-3 rounded-lg border border-emerald-200">
+                                <span class="text-xs font-semibold text-gray-600">Account Type</span>
+                                <p class="text-sm font-bold text-gray-900 mt-1">${bank.account_type.charAt(0).toUpperCase() + bank.account_type.slice(1)}</p>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border border-emerald-200">
+                                <span class="text-xs font-semibold text-gray-600">Currency</span>
+                                <p class="text-sm font-bold text-gray-900 mt-1">${bank.currency}</p>
+                            </div>
+                            ${bank.country ? `
+                            <div class="bg-white p-3 rounded-lg border border-emerald-200 col-span-2">
+                                <span class="text-xs font-semibold text-gray-600">Country</span>
+                                <p class="text-sm font-bold text-gray-900 mt-1">${bank.country}</p>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    ${bank.instructions ? `
+                    <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded mb-8">
+                        <h4 class="font-bold text-blue-900 mb-2">Transfer Instructions</h4>
+                        <p class="text-sm text-blue-700">${bank.instructions}</p>
+                    </div>
+                    ` : ''}
+
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">
+                                    <strong>Important:</strong> Please verify all bank details before making a transfer. Include the correct reference information to ensure proper payment processing.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modal-content').innerHTML = modalContent;
+            document.getElementById('method-modal').classList.remove('hidden');
+        }
 
         function closeModal() {
             document.getElementById('method-modal').classList.add('hidden');
@@ -359,7 +578,7 @@ try {
         });
 
         <?php if ($selected_method_id && $selected_method): ?>
-        showMethodDetails(<?php echo $selected_method_id; ?>);
+        showCryptoDetails(<?php echo $selected_method_id; ?>);
         <?php endif; ?>
     </script>
 </body>
