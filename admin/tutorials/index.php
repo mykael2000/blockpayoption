@@ -160,12 +160,16 @@ $page_title = 'Tutorials';
                 
                 <!-- Summary -->
                 <div class="mt-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4 border border-purple-200">
+                    <?php
+                    $published_count = count(array_filter($tutorials, fn($t) => $t['is_published']));
+                    $draft_count = count(array_filter($tutorials, fn($t) => !$t['is_published']));
+                    ?>
                     <p class="text-sm text-gray-700">
                         <span class="font-semibold"><?= count($tutorials) ?></span> tutorial<?= count($tutorials) !== 1 ? 's' : '' ?> total
                         • 
-                        <span class="font-semibold"><?= count(array_filter($tutorials, fn($t) => $t['is_published'])) ?></span> published
+                        <span class="font-semibold"><?= $published_count ?></span> published
                         •
-                        <span class="font-semibold"><?= count(array_filter($tutorials, fn($t) => !$t['is_published'])) ?></span> draft<?= count(array_filter($tutorials, fn($t) => !$t['is_published'])) !== 1 ? 's' : '' ?>
+                        <span class="font-semibold"><?= $draft_count ?></span> draft<?= $draft_count !== 1 ? 's' : '' ?>
                     </p>
                 </div>
             <?php endif; ?>
