@@ -86,76 +86,7 @@ $page_title = 'Bank Payment Methods';
                                     <th class="text-center py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-200">
-                                <?php foreach ($bank_methods as $method): ?>
-                                    <tr class="hover:bg-gradient-to-r hover:from-emerald-50 hover:to-green-50 transition duration-150">
-                                        <td class="py-4 px-6">
-                                            <div class="flex items-center space-x-3">
-                                                <?php if ($method['logo_path']): ?>
-                                                    <img src="/<?= e($method['logo_path']) ?>" alt="<?= e($method['bank_name']) ?>" class="w-10 h-10 rounded-full object-cover border-2 border-gray-200">
-                                                <?php else: ?>
-                                                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center text-white font-bold text-lg">
-                                                        🏦
-                                                    </div>
-                                                <?php endif; ?>
-                                                <div>
-                                                    <div class="font-semibold text-gray-800"><?= e($method['bank_name']) ?></div>
-                                                    <div class="text-xs text-gray-500"><?= e($method['country'] ?? 'N/A') ?></div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="py-4 px-6">
-                                            <div class="text-sm">
-                                                <div class="font-medium text-gray-800"><?= e($method['account_holder_name']) ?></div>
-                                                <code class="bg-gray-100 px-2 py-1 rounded text-xs text-gray-700 font-mono">
-                                                    <?= e(maskAccountNumber($method['account_number'])) ?>
-                                                </code>
-                                            </div>
-                                        </td>
-                                        <td class="py-4 px-6">
-                                            <div class="text-sm">
-                                                <span class="bg-emerald-100 text-emerald-800 px-2 py-1 rounded text-xs font-semibold inline-block mb-1">
-                                                    <?= e(ucfirst($method['account_type'])) ?>
-                                                </span>
-                                                <div class="text-gray-600"><?= e($method['currency']) ?></div>
-                                            </div>
-                                        </td>
-                                        <td class="py-4 px-6 text-center">
-                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-gray-200 text-gray-700 rounded-full font-semibold text-sm">
-                                                <?= e($method['display_order']) ?>
-                                            </span>
-                                        </td>
-                                        <td class="py-4 px-6 text-center">
-                                            <?php if ($method['is_active']): ?>
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 shadow-sm">
-                                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                                                    Active
-                                                </span>
-                                            <?php else: ?>
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 shadow-sm">
-                                                    <span class="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
-                                                    Inactive
-                                                </span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="py-4 px-6">
-                                            <div class="flex items-center justify-center space-x-2">
-                                                <a href="edit.php?id=<?= $method['id'] ?>" 
-                                                   class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200 shadow hover:shadow-lg transform hover:scale-105" 
-                                                   title="Edit">
-                                                    ✏️ Edit
-                                                </a>
-                                                <a href="delete.php?id=<?= $method['id'] ?>" 
-                                                   class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200 shadow hover:shadow-lg transform hover:scale-105" 
-                                                   onclick="return confirm('Are you sure you want to delete this bank payment method? This action cannot be undone.');"
-                                                   title="Delete">
-                                                    🗑️ Delete
-                                                </a>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
+                            
                         </table>
                     </div>
                 </div>
