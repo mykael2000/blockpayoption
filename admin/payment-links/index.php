@@ -31,14 +31,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     redirect('/admin/payment-links/index.php');
 }
 
+// Get filter
+$filter = $_GET['filter'] ?? 'all';
+$allowed_filters = ['all', 'crypto', 'bank'];
+if (!in_array($filter, $allowed_filters)) {
+    $filter = 'all';
+}
+
 // Get all payment links with payment method details
 try {
-    $stmt = $pdo->query("
-        SELECT pl.*, pm.name as payment_method_name, pm.symbol as payment_method_symbol
+    $sql = "
+        SELECT pl.*, 
+               pm.name as payment_method_name, 
+               pm.symbol as payment_method_symbol,
+               bpm.bank_name,
+               bpm.account_holder_name,
+               pl.payment_type
         FROM payment_links pl
         LEFT JOIN payment_methods pm ON pl.payment_method_id = pm.id
-        ORDER BY pl.created_at DESC
-    ");
+        LEFT JOIN bank_payment_methods bpm ON pl.bank_payment_method_id = bpm.id
+    ";
+    
+    if ($filter !== 'all') {
+        $sql .= " WHERE pl.payment_type = :filter";
+    }
+    
+    $sql .= " ORDER BY pl.created_at DESC";
+    
+    $stmt = $pdo->prepare($sql);
+    if ($filter !== 'all') {
+        $stmt->execute(['filter' => $filter]);
+    } else {
+        $stmt->execute();
+    }
     $payment_links = $stmt->fetchAll();
 } catch (PDOException $e) {
     error_log("Payment links fetch error: " . $e->getMessage());
@@ -70,7 +95,7 @@ $page_title = 'Payment Links';
             <div class="mb-8 flex items-center justify-between">
                 <div>
                     <h1 class="text-3xl font-bold text-gray-800">Payment Links</h1>
-                    <p class="text-gray-600 mt-1">Create and manage cryptocurrency payment links</p>
+                    <p class="text-gray-600 mt-1">Create and manage cryptocurrency and bank transfer payment links</p>
                 </div>
                 <a href="/admin/payment-links/create.php" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition font-medium">
                     + Create Payment Link
@@ -83,6 +108,20 @@ $page_title = 'Payment Links';
                     <?= e($flash['message']) ?>
                 </div>
             <?php endif; ?>
+
+            <!-- Filter Buttons -->
+            <div class="mb-6 flex items-center space-x-3">
+                <span class="text-sm font-semibold text-gray-700">Filter by type:</span>
+                <a href="?filter=all" class="px-4 py-2 rounded-lg font-medium transition <?= $filter === 'all' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' ?>">
+                    All
+                </a>
+                <a href="?filter=crypto" class="px-4 py-2 rounded-lg font-medium transition <?= $filter === 'crypto' ? 'bg-purple-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' ?>">
+                    ₿ Crypto
+                </a>
+                <a href="?filter=bank" class="px-4 py-2 rounded-lg font-medium transition <?= $filter === 'bank' ? 'bg-green-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' ?>">
+                    🏦 Bank
+                </a>
+            </div>
 
             <!-- Payment Links Table -->
             <div class="bg-white rounded-xl shadow-md overflow-hidden">
@@ -101,6 +140,7 @@ $page_title = 'Payment Links';
                             <thead class="bg-gradient-to-r from-purple-50 to-blue-50 border-b border-gray-200">
                                 <tr>
                                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Link ID</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Type</th>
                                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Payment Method</th>
                                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Amount</th>
                                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
@@ -117,8 +157,25 @@ $page_title = 'Payment Links';
                                             <code class="px-2 py-1 bg-gray-100 text-purple-700 rounded text-sm font-mono"><?= e($link['unique_id']) ?></code>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
+                                            <?php if ($link['payment_type'] === 'crypto'): ?>
+                                                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
+                                                    ₿ Crypto
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
+                                                    🏦 Bank
+                                                </span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
-                                                <span class="font-medium text-gray-900"><?= e($link['payment_method_name'] ?? 'N/A') ?></span>
+                                                <span class="font-medium text-gray-900">
+                                                    <?php if ($link['payment_type'] === 'crypto'): ?>
+                                                        <?= e($link['payment_method_name'] ?? 'N/A') ?>
+                                                    <?php else: ?>
+                                                        <?= e($link['bank_name'] ?? 'N/A') ?>
+                                                    <?php endif; ?>
+                                                </span>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">

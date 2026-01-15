@@ -46,10 +46,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // Get payment link details
 try {
     $stmt = $pdo->prepare("
-        SELECT pl.*, pm.name as payment_method_name, pm.symbol as payment_method_symbol, 
-               pm.wallet_address, pm.qr_code_path, pm.networks
+        SELECT pl.*, 
+               pm.name as payment_method_name, 
+               pm.symbol as payment_method_symbol, 
+               pm.wallet_address, 
+               pm.qr_code_path, 
+               pm.networks,
+               bpm.bank_name,
+               bpm.account_holder_name,
+               bpm.account_number,
+               bpm.routing_number,
+               bpm.swift_bic_code,
+               bpm.bank_address,
+               bpm.account_type,
+               bpm.instructions as bank_instructions
         FROM payment_links pl
         LEFT JOIN payment_methods pm ON pl.payment_method_id = pm.id
+        LEFT JOIN bank_payment_methods bpm ON pl.bank_payment_method_id = bpm.id
         WHERE pl.id = ?
     ");
     $stmt->execute([$id]);
@@ -67,6 +80,15 @@ try {
 
 // Generate shareable link
 $payment_url = SITE_URL . '/pay.php?id=' . urlencode($link['unique_id']);
+
+// Determine color scheme based on payment type
+$is_bank = ($link['payment_type'] === 'bank');
+$primary_color = $is_bank ? 'green' : 'purple';
+$gradient_from = $is_bank ? 'from-green-600' : 'from-purple-600';
+$gradient_to = $is_bank ? 'to-green-700' : 'to-blue-600';
+$bg_light = $is_bank ? 'bg-green-50' : 'bg-purple-50';
+$text_color = $is_bank ? 'text-green-700' : 'text-purple-700';
+$border_color = $is_bank ? 'border-green-200' : 'border-purple-200';
 
 $page_title = 'Payment Link Details';
 ?>
@@ -91,7 +113,7 @@ $page_title = 'Payment Link Details';
         <main class="flex-1 p-8">
             <!-- Header -->
             <div class="mb-8">
-                <a href="/admin/payment-links/index.php" class="text-purple-600 hover:text-purple-700 font-medium mb-4 inline-block">
+                <a href="/admin/payment-links/index.php" class="text-<?= $primary_color ?>-600 hover:text-<?= $primary_color ?>-700 font-medium mb-4 inline-block">
                     ← Back to Payment Links
                 </a>
                 <div class="flex items-center justify-between">
@@ -99,17 +121,28 @@ $page_title = 'Payment Link Details';
                         <h1 class="text-3xl font-bold text-gray-800">Payment Link Details</h1>
                         <p class="text-gray-600 mt-1">View and manage payment link information</p>
                     </div>
-                    <?php 
-                    $status_colors = [
-                        'pending' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                        'completed' => 'bg-green-100 text-green-800 border-green-200',
-                        'expired' => 'bg-red-100 text-red-800 border-red-200'
-                    ];
-                    $status_class = $status_colors[$link['status']] ?? 'bg-gray-100 text-gray-800 border-gray-200';
-                    ?>
-                    <span class="px-4 py-2 rounded-full text-sm font-semibold border <?= $status_class ?>">
-                        <?= e(ucfirst($link['status'])) ?>
-                    </span>
+                    <div class="flex items-center space-x-3">
+                        <?php if ($is_bank): ?>
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
+                                🏦 Bank Transfer
+                            </span>
+                        <?php else: ?>
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
+                                ₿ Crypto
+                            </span>
+                        <?php endif; ?>
+                        <?php 
+                        $status_colors = [
+                            'pending' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                            'completed' => 'bg-green-100 text-green-800 border-green-200',
+                            'expired' => 'bg-red-100 text-red-800 border-red-200'
+                        ];
+                        $status_class = $status_colors[$link['status']] ?? 'bg-gray-100 text-gray-800 border-gray-200';
+                        ?>
+                        <span class="px-4 py-2 rounded-full text-sm font-semibold border <?= $status_class ?>">
+                            <?= e(ucfirst($link['status'])) ?>
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -133,12 +166,17 @@ $page_title = 'Payment Link Details';
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-600 mb-1">Link ID</label>
-                                <code class="block px-3 py-2 bg-gray-100 text-purple-700 rounded font-mono text-sm"><?= e($link['unique_id']) ?></code>
+                                <code class="block px-3 py-2 bg-gray-100 text-<?= $primary_color ?>-700 rounded font-mono text-sm"><?= e($link['unique_id']) ?></code>
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-semibold text-gray-600 mb-1">Payment Method</label>
-                                <p class="text-gray-900 font-medium"><?= e($link['payment_method_name']) ?></p>
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Payment Type</label>
+                                <p class="text-gray-900 font-medium"><?= $is_bank ? '🏦 Bank Transfer' : '₿ Cryptocurrency' ?></p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-1"><?= $is_bank ? 'Bank Name' : 'Payment Method' ?></label>
+                                <p class="text-gray-900 font-medium"><?= e($is_bank ? $link['bank_name'] : $link['payment_method_name']) ?></p>
                             </div>
 
                             <div>
@@ -149,10 +187,79 @@ $page_title = 'Payment Link Details';
                                 </p>
                             </div>
 
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-600 mb-1">Wallet Address</label>
-                                <code class="block px-3 py-2 bg-gray-100 text-gray-700 rounded text-xs break-all"><?= e($link['wallet_address']) ?></code>
-                            </div>
+                            <?php if ($is_bank): ?>
+                                <!-- Bank Account Details -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-600 mb-1">Account Holder</label>
+                                    <p class="text-gray-900"><?= e($link['account_holder_name']) ?></p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-600 mb-1">Account Number</label>
+                                    <div class="flex items-center space-x-2">
+                                        <code class="px-3 py-2 bg-gray-100 text-gray-700 rounded text-sm font-mono"><?= e(maskAccountNumber($link['account_number'])) ?></code>
+                                        <button onclick="copyToClipboard('<?= e($link['account_number']) ?>', this)" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded text-sm transition">
+                                            📋
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <?php if ($link['routing_number']): ?>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-600 mb-1">Routing Number</label>
+                                    <div class="flex items-center space-x-2">
+                                        <code class="px-3 py-2 bg-gray-100 text-gray-700 rounded text-sm"><?= e($link['routing_number']) ?></code>
+                                        <button onclick="copyToClipboard('<?= e($link['routing_number']) ?>', this)" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded text-sm transition">
+                                            📋
+                                        </button>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
+
+                                <?php if ($link['swift_bic_code']): ?>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-600 mb-1">SWIFT/BIC Code</label>
+                                    <div class="flex items-center space-x-2">
+                                        <code class="px-3 py-2 bg-gray-100 text-gray-700 rounded text-sm"><?= e($link['swift_bic_code']) ?></code>
+                                        <button onclick="copyToClipboard('<?= e($link['swift_bic_code']) ?>', this)" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded text-sm transition">
+                                            📋
+                                        </button>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
+
+                                <?php if ($link['account_type']): ?>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-600 mb-1">Account Type</label>
+                                    <p class="text-gray-900 capitalize"><?= e($link['account_type']) ?></p>
+                                </div>
+                                <?php endif; ?>
+
+                                <?php if ($link['bank_address']): ?>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-gray-600 mb-1">Bank Address</label>
+                                    <p class="text-gray-900 text-sm"><?= e($link['bank_address']) ?></p>
+                                </div>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <!-- Crypto Wallet Details -->
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-gray-600 mb-1">Wallet Address</label>
+                                    <div class="flex items-center space-x-2">
+                                        <code class="flex-1 px-3 py-2 bg-gray-100 text-gray-700 rounded text-xs break-all"><?= e($link['wallet_address']) ?></code>
+                                        <button onclick="copyToClipboard('<?= e($link['wallet_address']) ?>', this)" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded text-sm transition">
+                                            📋
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <?php if ($link['networks']): ?>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-600 mb-1">Supported Networks</label>
+                                    <p class="text-gray-900 text-sm"><?= e($link['networks']) ?></p>
+                                </div>
+                                <?php endif; ?>
+                            <?php endif; ?>
 
                             <?php if ($link['recipient_email']): ?>
                             <div>
@@ -161,10 +268,10 @@ $page_title = 'Payment Link Details';
                             </div>
                             <?php endif; ?>
 
-                            <?php if ($link['networks']): ?>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-600 mb-1">Supported Networks</label>
-                                <p class="text-gray-900 text-sm"><?= e($link['networks']) ?></p>
+                            <?php if ($is_bank && $link['bank_instructions']): ?>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Transfer Instructions</label>
+                                <p class="text-gray-700 text-sm bg-gray-50 p-3 rounded"><?= e($link['bank_instructions']) ?></p>
                             </div>
                             <?php endif; ?>
 
@@ -187,7 +294,7 @@ $page_title = 'Payment Link Details';
                     </div>
 
                     <!-- Shareable Link Card -->
-                    <div class="bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl shadow-lg p-8 text-white">
+                    <div class="bg-gradient-to-br <?= $gradient_from ?> <?= $gradient_to ?> rounded-xl shadow-lg p-8 text-white">
                         <h2 class="text-xl font-bold mb-4 flex items-center">
                             <span class="text-2xl mr-3">🔗</span>
                             Shareable Payment Link
@@ -198,13 +305,13 @@ $page_title = 'Payment Link Details';
                         </div>
 
                         <button 
-                            onclick="copyToClipboard('<?= e($payment_url) ?>')"
-                            class="w-full px-6 py-3 bg-white text-purple-600 rounded-lg hover:bg-opacity-90 transition font-medium"
+                            onclick="copyToClipboard('<?= e($payment_url) ?>', this, true)"
+                            class="w-full px-6 py-3 bg-white text-<?= $primary_color ?>-600 rounded-lg hover:bg-opacity-90 transition font-medium"
                         >
                             📋 Copy Link to Clipboard
                         </button>
                         
-                        <p class="text-purple-100 text-sm mt-4 text-center">
+                        <p class="text-<?= $primary_color ?>-100 text-sm mt-4 text-center">
                             Share this link with your customer to receive payment
                         </p>
                     </div>
@@ -233,7 +340,7 @@ $page_title = 'Payment Link Details';
                                 </div>
                                 <button 
                                     type="submit" 
-                                    class="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition font-medium whitespace-nowrap"
+                                    class="px-6 py-3 bg-gradient-to-r <?= $gradient_from ?> <?= $gradient_to ?> text-white rounded-lg hover:shadow-lg transition font-medium whitespace-nowrap"
                                 >
                                     Update Status
                                 </button>
@@ -248,7 +355,8 @@ $page_title = 'Payment Link Details';
 
                 <!-- Right Column - QR Code & Actions -->
                 <div class="space-y-6">
-                    <!-- QR Code Card -->
+                    <?php if (!$is_bank): ?>
+                    <!-- QR Code Card (Only for Crypto) -->
                     <div class="bg-white rounded-xl shadow-md p-8">
                         <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">QR Code</h2>
                         
@@ -260,6 +368,7 @@ $page_title = 'Payment Link Details';
                             Scan this QR code to access the payment page
                         </p>
                     </div>
+                    <?php endif; ?>
 
                     <!-- Quick Actions Card -->
                     <div class="bg-white rounded-xl shadow-md p-6">
@@ -298,8 +407,13 @@ $page_title = 'Payment Link Details';
                                 <p class="font-semibold mb-2">Payment Instructions</p>
                                 <ol class="list-decimal list-inside space-y-1">
                                     <li>Share the payment link with your customer</li>
+                                    <?php if ($is_bank): ?>
+                                    <li>Customer initiates a bank transfer with the exact amount</li>
+                                    <li>Verify the transaction in your bank account</li>
+                                    <?php else: ?>
                                     <li>Customer sends the exact amount to the wallet address</li>
                                     <li>Verify the transaction on the blockchain</li>
+                                    <?php endif; ?>
                                     <li>Update the status to "Completed"</li>
                                 </ol>
                             </div>
@@ -311,7 +425,8 @@ $page_title = 'Payment Link Details';
     </div>
 
     <script>
-        // Generate QR Code
+        <?php if (!$is_bank): ?>
+        // Generate QR Code (only for crypto payments)
         const qrcode = new QRCode(document.getElementById("qrcode"), {
             text: "<?= e($payment_url) ?>",
             width: 200,
@@ -320,22 +435,34 @@ $page_title = 'Payment Link Details';
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.H
         });
+        <?php endif; ?>
 
         // Copy to clipboard function
-        function copyToClipboard(text) {
+        function copyToClipboard(text, button, isLink = false) {
             navigator.clipboard.writeText(text).then(function() {
                 // Show success feedback
-                const button = event.target;
                 const originalText = button.innerHTML;
                 button.innerHTML = '✅ Copied!';
-                button.classList.add('bg-green-500');
-                button.classList.remove('bg-white', 'text-purple-600');
-                button.classList.add('text-white');
+                
+                if (isLink) {
+                    button.classList.add('bg-green-500');
+                    button.classList.remove('bg-white', 'text-<?= $primary_color ?>-600');
+                    button.classList.add('text-white');
+                } else {
+                    button.classList.add('bg-green-500', 'text-white');
+                    button.classList.remove('bg-gray-200');
+                }
                 
                 setTimeout(function() {
                     button.innerHTML = originalText;
-                    button.classList.remove('bg-green-500', 'text-white');
-                    button.classList.add('bg-white', 'text-purple-600');
+                    
+                    if (isLink) {
+                        button.classList.remove('bg-green-500', 'text-white');
+                        button.classList.add('bg-white', 'text-<?= $primary_color ?>-600');
+                    } else {
+                        button.classList.remove('bg-green-500', 'text-white');
+                        button.classList.add('bg-gray-200');
+                    }
                 }, 2000);
             }, function(err) {
                 alert('Failed to copy: ' + err);
