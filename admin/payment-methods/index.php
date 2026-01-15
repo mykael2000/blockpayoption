@@ -186,7 +186,7 @@ $page_title = 'Payment Methods';
                 
                 $active_count = 0;
                 $inactive_count = 0;
-                foreach ($bank_methods as $method) {
+                foreach ($payment_methods as $method) {
                     if ($method['is_active']) {
                         $active_count++;
                     } else {
@@ -200,7 +200,7 @@ $page_title = 'Payment Methods';
                         <div class="flex items-center space-x-6">
                             <div>
                                 <span class="text-gray-600">Total Methods:</span>
-                                <span class="font-bold text-gray-800 ml-2"><?= count($bank_methods) ?></span>
+                                <span class="font-bold text-gray-800 ml-2"><?= count($payment_methods) ?></span>
                             </div>
                             <div>
                                 <span class="text-gray-600">Active:</span>
