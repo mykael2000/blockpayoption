@@ -199,3 +199,103 @@ function validate_required($fields, $data) {
     }
     return $errors;
 }
+
+/**
+ * Get all bank payment methods
+ */
+function getBankPaymentMethods($active_only = true) {
+    global $pdo;
+    try {
+        $sql = "SELECT * FROM bank_payment_methods";
+        if ($active_only) {
+            $sql .= " WHERE is_active = 1";
+        }
+        $sql .= " ORDER BY display_order ASC, created_at DESC";
+        
+        $stmt = $pdo->query($sql);
+        return $stmt->fetchAll();
+    } catch (PDOException $e) {
+        error_log("Error fetching bank payment methods: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Get bank payment method by ID
+ */
+function getBankPaymentMethodById($id) {
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM bank_payment_methods WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch();
+    } catch (PDOException $e) {
+        error_log("Error fetching bank payment method: " . $e->getMessage());
+        return null;
+    }
+}
+
+/**
+ * Mask account number (show last 4 digits)
+ */
+function maskAccountNumber($accountNumber, $visibleDigits = 4) {
+    if (empty($accountNumber)) {
+        return '';
+    }
+    $length = strlen($accountNumber);
+    if ($length <= $visibleDigits) {
+        return $accountNumber;
+    }
+    return str_repeat('*', $length - $visibleDigits) . substr($accountNumber, -$visibleDigits);
+}
+
+/**
+ * Format routing number (add spaces for readability)
+ */
+function formatRoutingNumber($routing) {
+    if (empty($routing)) {
+        return '';
+    }
+    // Remove any existing spaces
+    $routing = preg_replace('/\s+/', '', $routing);
+    // Add space every 3 digits for US routing numbers (9 digits)
+    if (strlen($routing) === 9 && ctype_digit($routing)) {
+        return substr($routing, 0, 3) . ' ' . substr($routing, 3, 3) . ' ' . substr($routing, 6, 3);
+    }
+    return $routing;
+}
+
+/**
+ * Validate account number
+ */
+function validateAccountNumber($number) {
+    if (empty($number)) {
+        return false;
+    }
+    // Allow alphanumeric characters (for IBAN and other international formats)
+    return preg_match('/^[A-Z0-9]+$/i', str_replace([' ', '-'], '', $number));
+}
+
+/**
+ * Validate routing number (US format - 9 digits)
+ */
+function validateRoutingNumber($routing) {
+    if (empty($routing)) {
+        return true; // Optional field
+    }
+    // Remove spaces and dashes
+    $routing = preg_replace('/[\s-]/', '', $routing);
+    // US routing numbers are 9 digits
+    return preg_match('/^\d{9}$/', $routing);
+}
+
+/**
+ * Validate SWIFT/BIC code
+ */
+function validateSwiftCode($swift) {
+    if (empty($swift)) {
+        return true; // Optional field
+    }
+    // SWIFT codes are 8 or 11 characters (letters and numbers)
+    return preg_match('/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/', strtoupper($swift));
+}
