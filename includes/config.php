@@ -11,6 +11,8 @@ if (!defined('CONFIG_LOADED')) {
 }
 
 // Debug Mode (set to false in production)
+// WARNING: Keep this true only for development. Set to false in production to prevent
+// information disclosure through error messages.
 define('DEBUG_MODE', true);
 
 // Error reporting configuration
@@ -45,6 +47,8 @@ define('CSRF_TOKEN_NAME', '_token');
 define('SESSION_LIFETIME', 3600); // 1 hour in seconds
 
 // Database Configuration
+// WARNING: In production, consider using environment variables or a separate
+// configuration file (not in version control) for database credentials.
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'blockpayoption');
 define('DB_USER', 'root');
@@ -53,7 +57,7 @@ define('DB_CHARSET', 'utf8mb4');
 
 // File Upload Configuration
 define('UPLOAD_DIR', BASE_PATH . '/uploads/');
-define('UPLOAD_URL', '/uploads/');
+define('UPLOAD_URL', BASE_URL . '/uploads/');
 define('MAX_FILE_SIZE', 5242880); // 5MB in bytes
 define('ALLOWED_EXTENSIONS', ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
 

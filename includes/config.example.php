@@ -11,7 +11,7 @@ if (!defined('CONFIG_LOADED')) {
 }
 
 // Debug Mode (set to false in production)
-define('DEBUG_MODE', true);
+define('DEBUG_MODE', false);
 
 // Error reporting configuration
 if (DEBUG_MODE) {
@@ -53,7 +53,7 @@ define('DB_CHARSET', 'utf8mb4');
 
 // File Upload Configuration
 define('UPLOAD_DIR', BASE_PATH . '/uploads/');
-define('UPLOAD_URL', '/uploads/');
+define('UPLOAD_URL', BASE_URL . '/uploads/');
 define('MAX_FILE_SIZE', 5242880); // 5MB in bytes
 define('ALLOWED_EXTENSIONS', ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
 

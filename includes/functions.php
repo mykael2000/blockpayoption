@@ -18,7 +18,12 @@ function e($string) {
 function redirect($path) {
     // If path starts with /, treat as absolute from site root
     if (strpos($path, '/') === 0) {
-        $url = BASE_URL . $path;
+        if (!defined('BASE_URL')) {
+            // Fallback if BASE_URL is not defined
+            $url = $path;
+        } else {
+            $url = BASE_URL . $path;
+        }
     } else {
         $url = $path;
     }
