@@ -199,3 +199,113 @@ function validate_required($fields, $data) {
     }
     return $errors;
 }
+
+/**
+ * Mask account number for security
+ */
+function maskAccountNumber($accountNumber) {
+    if (strlen($accountNumber) <= 4) {
+        return $accountNumber;
+    }
+    $visibleDigits = 4;
+    $maskedPart = str_repeat('*', strlen($accountNumber) - $visibleDigits);
+    return $maskedPart . substr($accountNumber, -$visibleDigits);
+}
+
+/**
+ * Validate routing number format
+ */
+function validateRoutingNumber($routingNumber) {
+    // US routing number: 9 digits
+    if (preg_match('/^\d{9}$/', $routingNumber)) {
+        return true;
+    }
+    // Allow other country formats (6-11 digits)
+    if (preg_match('/^\d{6,11}$/', $routingNumber)) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Validate SWIFT/BIC code format
+ */
+function validateSwiftCode($swiftCode) {
+    // SWIFT code: 8 or 11 alphanumeric characters
+    return preg_match('/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/i', $swiftCode);
+}
+
+/**
+ * Validate IBAN format (basic validation)
+ */
+function validateIBAN($iban) {
+    // Remove spaces and convert to uppercase
+    $iban = strtoupper(str_replace(' ', '', $iban));
+    
+    // IBAN should be 15-34 alphanumeric characters
+    if (!preg_match('/^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$/', $iban)) {
+        return false;
+    }
+    
+    // Move first 4 characters to end
+    $rearranged = substr($iban, 4) . substr($iban, 0, 4);
+    
+    // Convert letters to numbers (A=10, B=11, ..., Z=35)
+    $numericString = '';
+    for ($i = 0; $i < strlen($rearranged); $i++) {
+        $char = $rearranged[$i];
+        if (is_numeric($char)) {
+            $numericString .= $char;
+        } else {
+            $numericString .= (ord($char) - ord('A') + 10);
+        }
+    }
+    
+    // Check if mod 97 equals 1
+    return bcmod($numericString, '97') === '1';
+}
+
+/**
+ * Format bank details for display
+ */
+function formatBankDetails($bankMethod) {
+    $details = [];
+    
+    if (!empty($bankMethod['bank_name'])) {
+        $details['Bank Name'] = $bankMethod['bank_name'];
+    }
+    
+    if (!empty($bankMethod['account_holder_name'])) {
+        $details['Account Holder'] = $bankMethod['account_holder_name'];
+    }
+    
+    if (!empty($bankMethod['account_number'])) {
+        $details['Account Number'] = $bankMethod['account_number'];
+    }
+    
+    if (!empty($bankMethod['routing_number'])) {
+        $details['Routing Number'] = $bankMethod['routing_number'];
+    }
+    
+    if (!empty($bankMethod['swift_code'])) {
+        $details['SWIFT/BIC Code'] = $bankMethod['swift_code'];
+    }
+    
+    if (!empty($bankMethod['iban'])) {
+        $details['IBAN'] = $bankMethod['iban'];
+    }
+    
+    if (!empty($bankMethod['account_type'])) {
+        $details['Account Type'] = ucfirst($bankMethod['account_type']);
+    }
+    
+    if (!empty($bankMethod['currency'])) {
+        $details['Currency'] = $bankMethod['currency'];
+    }
+    
+    if (!empty($bankMethod['country'])) {
+        $details['Country'] = $bankMethod['country'];
+    }
+    
+    return $details;
+}
