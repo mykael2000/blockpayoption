@@ -26,7 +26,7 @@ $form_data = [
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Verify CSRF token
-    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
+    if (!verify_csrf_token($_POST[CSRF_TOKEN_NAME] ??  '')) {
         $errors[] = 'Invalid CSRF token. Please try again.';
     } else {
         // Get form data
