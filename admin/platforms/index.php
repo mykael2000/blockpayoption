@@ -165,8 +165,17 @@ $page_title = 'Platforms';
                 <!-- Summary -->
                 <div class="mt-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4 border border-purple-200">
                     <?php
-                    $active_count = count(array_filter($platforms, fn($p) => $p['is_active']));
-                    $inactive_count = count(array_filter($platforms, fn($p) => !$p['is_active']));
+                    // Calculate counts
+                    $active_count = 0;
+                    $inactive_count = 0;
+                    foreach ($platforms as $p) {
+                        if ($p['is_active']) {
+                            $active_count++;
+                        } else {
+                            $inactive_count++;
+                        }
+                    }
+                    // Calculate average rating
                     $avg_rating = count($platforms) > 0 ? array_sum(array_column($platforms, 'rating')) / count($platforms) : 0;
                     ?>
                     <p class="text-sm text-gray-700">
