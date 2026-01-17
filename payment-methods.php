@@ -309,7 +309,7 @@ try {
                 <div>
                     <h4 class="font-bold mb-4">Contact</h4>
                     <ul class="space-y-2 text-gray-400 text-sm">
-                        <li><?php echo e(ADMIN_EMAIL); ?></li>
+                        <li>support@blockpayoption.online</li>
                         <li>24/7 Support Available</li>
                     </ul>
                 </div>
